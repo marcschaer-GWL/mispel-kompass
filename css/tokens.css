@@ -1,0 +1,79 @@
+/* ============================================================================
+   GWL Design Tokens — MiSpeL
+   Quelle: ../design/GWL-Design-Guidelines.md (übernommen aus Konfigurator-
+   Westafrika, packages/frontend/src/styles/theme.ts, Stand 2026-08-12).
+   Ein Theme (dunkel), kein Light/Dark-Split — deckungsgleich mit dem
+   Kundenbereich von gwl-design.de.
+
+   Tokens, die die Vorgaben nicht direkt benennen (Chart-Segmentfarben,
+   Fokus-Ring, Badge-Stufen für Modul 2/4), sind unten mit Begründung auf die
+   vorhandene Palette gemappt statt frei erfunden.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- Basisflächen (1:1 aus theme.ts) ---- */
+  --bg: #0D1117;
+  --surface: #161B22;
+  --surface-hover: #1C222B;
+  --border: #30363D;
+  /* etwas hellere Trennlinie für Elemente, die sich von --border abheben
+     sollen (Kartenränder auf Kartenrändern, Tabellenkopf) — Vorgaben kennen
+     nur einen Border-Ton, daher hier als abgeleiteter Wert, keine neue Farbe */
+  --border-strong: #3D4451;
+
+  /* ---- Text ---- */
+  --text-primary: #F0F6FC;
+  --text-secondary: #8B949E;
+  /* "muted" gibt es in den Vorgaben nicht separat — abgeleitet aus
+     text-secondary für Fußnoten/Quellen, wo noch weniger Gewicht nötig ist */
+  --text-muted: #6E7681;
+
+  /* ---- Akzente (1:1 aus theme.ts) ---- */
+  --gold: #E3A008;
+  --gold-soft: rgba(227, 160, 8, 0.14);
+  --gold-soft-border: rgba(227, 160, 8, 0.4);
+  --green: #2DA44E;
+  --green-soft: rgba(45, 164, 78, 0.14);
+  --green-soft-border: rgba(45, 164, 78, 0.4);
+
+  /* ---- Warnung / Fehler (1:1 aus theme.ts) ---- */
+  --warn-bg: rgba(227, 160, 8, 0.14);
+  --warn-border: rgba(227, 160, 8, 0.5);
+  --warn-text: #F2C14E;
+  --error-text: #F85149;
+
+  /* ---- Fokus ----
+     Laut Vorgabe ist Gold explizit auch die Fokus-Highlight-Farbe
+     ("gold — Primäre Aktionen, Fokus-Highlights, Star-Badges"), daher kein
+     eigener Fokus-Ton, sondern Gold. */
+  --focus: var(--gold);
+
+  /* ---- Chart-Segmente (Modul 04, Balkendiagramm) ----
+     Nicht in den Vorgaben benannt. Mapping nach Bedeutung statt Optik:
+     - "Geförderter PV-Anteil" = Bestand/Status-quo-Anteil  -> green
+       (Vorgabe: green = "Status-Badges, positive Hervorhebung")
+     - "Freier Marktanteil" (Netzstrom, neue MiSpeL-Flexibilität, der
+       eigentliche Mehrwert) -> gold (Vorgabe: "primäre Aktionen")
+     - "Ungenutztes Potenzial" -> neutraler Border-Ton, keine Akzentfarbe */
+  --chart-pv: var(--green);
+  --chart-market: var(--gold);
+  --chart-unused: var(--border-strong);
+
+  /* ---- Schatten ---- */
+  --shadow: rgba(0, 0, 0, 0.4);
+
+  /* ---- Typografie ----
+     Vorgabe: eine Schriftfamilie (Inter) für Headline und Fließtext, Aufbau
+     der Hierarchie über Gewicht/Größe statt zweiter Schrift. Mono bleibt für
+     tabellarische Zahlenwerte (kWh/€) — kein Bestandteil der Markenvorgabe,
+     rein funktional für Ziffernausrichtung. */
+  --font-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

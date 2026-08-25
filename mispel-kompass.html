@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MiSpeL-Kompass</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">GWL-Design · Kunden-Wegweiser</div>
+    <h1>MiSpeL – Marktintegration von Speichern und Ladepunkten</h1>
+    <p class="dek">Was die neue Bundesnetzagentur-Regel für PV-Speicher, Batteriespeicher und Elektrofahrzeuge im netzdienlichen Betrieb bedeutet – und was sie für Ihre Anlage konkret bringt.</p>
+    <div class="meta-row">
+      <span class="chip"><span class="dot"></span>Festlegung nach §85d EEG (Stromspitzengesetz)</span>
+      <span class="chip status-warn"><span class="dot"></span>Arbeitsstand: August 2026</span>
+      <span class="chip status-good"><span class="dot"></span>Geplantes Inkrafttreten: 01.10.2026</span>
+    </div>
+    <div class="disclaimer">Dieses Tool fasst den öffentlich bekannten Arbeitsstand zusammen und dient der Erstinformation im Kundengespräch. Es ersetzt keine Rechts-, Steuer- oder Förderberatung. Die finale Festlegung der Bundesnetzagentur kann in Details abweichen – alle Rechenwerte in Modul 4 sind editierbare Beispielannahmen.</div>
+  </div>
+</header>
+
+<nav class="tabnav-wrap">
+  <div class="tabnav" role="tablist" aria-label="Werkzeug-Bereiche">
+    <button class="tab" role="tab" data-target="p1" aria-selected="true"><span class="num">01</span> Zweck</button>
+    <button class="tab" role="tab" data-target="p2" aria-selected="false"><span class="num">02</span> Vorgaben</button>
+    <button class="tab" role="tab" data-target="p4" aria-selected="false"><span class="num">03</span> Ihre Anlage &amp; Vergütungsvergleich</button>
+  </div>
+</nav>
+
+<main class="shell">
+
+  <!-- ============ PANEL 1: ZWECK ============ -->
+  <section class="panel" id="p1">
+    <div class="section-head">
+      <div class="kicker">01 · Wofür ist MiSpeL gebaut?</div>
+      <h2>Speicher und E-Autos dürfen künftig mit Netzstrom laden – ohne Förderung zu verlieren</h2>
+      <p class="lede">MiSpeL steht für „Marktintegration von Speichern und Ladepunkten". Es ist keine neue Steuer- oder Drosselregel, sondern löst ein Abrechnungsproblem, das bisher Flexibilität verhinderte.</p>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h3 class="card-title">Das bisherige Problem</h3>
+        <p>Ein geförderter PV-Heimspeicher durfte bislang praktisch nur mit selbst erzeugtem Solarstrom geladen werden – das sogenannte <strong>Ausschließlichkeitsgebot</strong>. Wurde auch nur eine kWh Netzstrom mitgeladen, drohte der Verlust der EEG-Förderung und der Umlageprivilegien für die gesamte Anlage. Das machte es unattraktiv, Speicher oder Fahrzeugbatterien flexibel auf günstige Börsenpreise oder Netzsignale reagieren zu lassen.</p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Die Lösung: kontrollierter Mischbetrieb</h3>
+        <p>MiSpeL erlaubt erstmals, dass Speicher und bidirektional ladende Elektrofahrzeuge <strong>zusätzlich Netzstrom aufnehmen</strong> dürfen – z. B. in günstigen Börsenstunden oder auf ein Netzsignal hin – ohne dass der PV-Anteil seine Förderfähigkeit verliert. Voraussetzung ist, dass Netz- und Solarstrom sauber auseinandergehalten werden (siehe Modul 02).</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">Zwei Ziele zugleich</h3>
+          <ul class="clean">
+            <li>Flexibilitätspotenzial von Heimspeichern &amp; E-Autos für Netz und Strommarkt praktisch nutzbar machen</li>
+            <li>Marktteilnahme dieser Anlagen erleichtern, ohne bestehende Förderansprüche zu gefährden</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Fahrzeuge werden gleichgestellt</h3>
+          <p>Bidirektionale Ladepunkte (Vehicle-to-Grid / Vehicle-to-Home) erhalten regulatorisch denselben Status wie stationäre Speicher. Ein E-Auto-Akku kann damit künftig wirtschaftlich wie ein Hausspeicher behandelt werden.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="ico">i</span>
+        <div>
+          <strong>Ergänzt §14a EnWG, ersetzt es nicht.</strong> §14a EnWG regelt weiterhin die netzdienliche Steuerung steuerbarer Verbrauchseinrichtungen (Dimmen bei Netzengpässen gegen reduziertes Netzentgelt). MiSpeL regelt zusätzlich, welche Strommengen bei Mischbetrieb noch als förderfähig gelten. Beide Regelwerke zusammen machen Speicher und Fahrzeuge netzdienlich <em>und</em> wirtschaftlich nutzbar.
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="ico">!</span>
+        <div>
+          <strong>Erwartungen realistisch einordnen:</strong> Für ein Einfamilienhaus ist der Effekt in erster Linie <strong>zusätzliche Ersparnis</strong>, kein nennenswertes Zusatzeinkommen – realistisch niedrige zwei- bis niedrige dreistellige Euro-Beträge pro Jahr, abhängig von Speichergröße und Marktteilnahme. Der PV-Eigenverbrauch bleibt der mit Abstand stärkste wirtschaftliche Hebel; MiSpeL ist die Kür obendrauf.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PANEL 2: VORGABEN & IHRE ANLAGE ============ -->
+  <section class="panel" id="p2" hidden>
+    <div class="section-head">
+      <div class="kicker">02 · Welche Vorgaben gelten?</div>
+      <h2>Drei Optionen zur Stromtrennung – je nach Aufwand und Flexibilität</h2>
+      <p class="lede">Wer Speicher oder Fahrzeug im Mischbetrieb nutzen will, muss PV- und Netzstrom nachvollziehbar trennen können. Der Betreiber wählt eine von drei Optionen.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card opt-card">
+        <div class="opt-head">
+          <h3>Ausschließlichkeit</h3>
+          <span class="badge easy">Status quo</span>
+        </div>
+        <p class="card-sub">Wie bisher – keine Änderung nötig</p>
+        <ul class="clean">
+          <li>Speicher lädt ausschließlich mit PV-Strom</li>
+          <li>Keine Netzstrom-Ladung erlaubt</li>
+          <li>100 % der gespeicherten Menge bleibt förderfähig</li>
+          <li>Kein zusätzlicher Messaufwand</li>
+          <li>Keine Markt- oder Arbitrage-Teilnahme möglich</li>
+        </ul>
+      </div>
+
+      <div class="card opt-card">
+        <div class="opt-head">
+          <h3>Abgrenzungsoption</h3>
+          <span class="badge flex">Maximale Flexibilität</span>
+        </div>
+        <p class="card-sub">Für Anlagen jeder Größe</p>
+        <ul class="clean">
+          <li>Exakte, messwertbasierte Trennung von PV- („grünem") und Netzstrom („grauem")</li>
+          <li>Viertelstündliche Werte, monatliche Verrechnung</li>
+          <li>PV-Anteil bleibt exakt abgegrenzt förderfähig</li>
+          <li>Netzanteil frei für Arbitrage, §14a-Modul-3-Signale, Flexibilitätsmärkte</li>
+          <li>Höherer Mess- und Abrechnungsaufwand (i. d. R. zusätzliches Zählerkonzept / Energiemanagementsystem)</li>
+        </ul>
+      </div>
+
+      <div class="card opt-card">
+        <div class="opt-head">
+          <h3>Pauschaloption</h3>
+          <span class="badge mid">Vereinfacht, bis 30 kWp</span>
+        </div>
+        <p class="card-sub">Nur für PV-Anlagen bis 30 kWp</p>
+        <ul class="clean">
+          <li>Vereinfachtes Verfahren ohne Feinmessung</li>
+          <li>Förderfähiger Anteil wird pauschal über Zeiten mit positiven Day-Ahead-Börsenpreisen ermittelt</li>
+          <li>Förderdeckel: <strong>500 kWh je installiertem kWp und Jahr</strong></li>
+          <li>Weniger Messaufwand als Abgrenzungsoption, dafür weniger exakt planbar</li>
+          <li>Unterliegt noch der beihilferechtlichen EU-Genehmigung (Stand Arbeitsstand)</li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="rule" />
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="card-title">Weitere Rahmenbedingungen</h3>
+        <ul class="clean">
+          <li>Gilt für private und größere Batteriespeicher sowie bidirektionale Ladepunkte (V2G/V2H), öffentlich und nicht-öffentlich</li>
+          <li>Ins Netz zurückgespeister Strom aus Speicher/Fahrzeug wird von den verbrauchsabhängigen Arbeitspreisen der Netzentgelte befreit; die Anschlussleistung bleibt kostenpflichtig</li>
+          <li>AgNes (Allgemeine Netzentgeltsystematik Strom) legt ergänzend fest, welche Netzentgelte auf diese Strommengen anfallen – tritt separat erst 2029 in Kraft</li>
+          <li>Für automatisiertes, vorausschauendes Laden/Entladen wird in der Praxis ein Energiemanagementsystem (HEMS) empfohlen – viertelstündlich wechselnde Preis- und Netzsignale lassen sich manuell kaum optimal nutzen</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Fristen</h3>
+        <div class="context-strip" style="margin-top:0">
+          <div class="context-item"><span class="k">Konsultation Entwurf</span><span class="v" style="font-size:14px">Okt. 2025</span></div>
+          <div class="context-item"><span class="k">Geplantes Inkrafttreten</span><span class="v" style="font-size:14px">01.10.2026</span></div>
+          <div class="context-item"><span class="k">Übergangsfrist Bestand</span><span class="v" style="font-size:14px">bis 30.09.2027*</span></div>
+        </div>
+        <p style="margin-top:14px; font-size:12.5px; color:var(--text-muted)">*nur im Einvernehmen mit dem zuständigen Netzbetreiber.</p>
+        <p style="font-size:12.5px; color:var(--text-muted)">Ergänzend gilt weiterhin §14a EnWG für die netzdienliche Steuerung steuerbarer Verbrauchseinrichtungen &gt; 4,2 kW im Niederspannungsnetz.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PANEL 4: IHRE ANLAGE & VERGÜTUNGSVERGLEICH ============ -->
+  <section class="panel" id="p4" hidden>
+    <div class="section-head">
+      <div class="kicker">03 · Ihre Anlage</div>
+      <h2>Eckdaten von PV-Anlage, Speicher und E-Auto</h2>
+      <p class="lede">Nur drei Angaben sind Pflicht – der Vergütungsvergleich aktualisiert sich live mit jeder Änderung. Ladeleistung und gewünschte Netzstrom-Menge sind unter „Erweiterte Einstellungen" bereits mit üblichen Werten vorbelegt und bei Bedarf anpassbar.</p>
+    </div>
+
+    <div class="card">
+      <div class="grid-2">
+        <label class="field">
+          PV-Anlagenleistung (kWp)
+          <input type="number" id="in-pv" min="0" step="0.1" value="10" />
+          <input type="range" id="in-pv-slider" min="0" max="50" step="0.5" value="10" aria-label="PV-Anlagenleistung (kWp), Regler" />
+          <span class="hint">Installierte Modulleistung Ihrer PV-Anlage</span>
+        </label>
+        <label class="field">
+          Speicherkapazität (kWh)
+          <input type="number" id="in-speicher" min="0" step="0.5" value="10" />
+          <input type="range" id="in-speicher-slider" min="0" max="60" step="1" value="10" aria-label="Speicherkapazität (kWh), Regler" />
+          <span class="hint">Nutzbare Kapazität des Batteriespeichers</span>
+        </label>
+      </div>
+
+      <div class="context-strip">
+        <div class="context-item"><span class="k">Technisch max. Speicher (Netz)</span><span class="v mono" id="ctx-speicher-max">–</span></div>
+        <div class="context-item"><span class="k">Pauschal-Förderdeckel</span><span class="v mono" id="ctx-deckel">–</span></div>
+        <div class="context-item"><span class="k">Pauschaloption</span><span class="v" id="ctx-zulaessig">–</span></div>
+      </div>
+      <p class="field-warn" id="warn-speicher" hidden></p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
+        <h3 class="card-title" style="margin-bottom:0">Bidirektionales E-Auto vorhanden?</h3>
+        <div class="yesno" role="group" aria-label="Bidirektionales E-Auto vorhanden?">
+          <button type="button" id="ev-ja" aria-pressed="false">Ja</button>
+          <button type="button" id="ev-nein" aria-pressed="true">Nein</button>
+        </div>
+      </div>
+      <p class="card-sub">MiSpeL stellt bidirektional ladende E-Autos (V2G/V2H) regulatorisch dem Heimspeicher gleich.</p>
+
+      <div id="ev-fields" hidden>
+        <label class="field">
+          Akkugrösse Elektroauto (kWh)
+          <input type="number" id="in-ev-akku" min="0" step="5" value="60" />
+          <input type="range" id="in-ev-akku-slider" min="0" max="120" step="5" value="60" aria-label="Akkugrösse Elektroauto (kWh), Regler" />
+          <span class="hint">Nutzbare Batteriekapazität des Fahrzeugs</span>
+        </label>
+
+        <div class="context-strip">
+          <div class="context-item"><span class="k">Technisch max. E-Auto (Netz)</span><span class="v mono" id="ctx-ev-max">–</span></div>
+        </div>
+        <p class="field-warn" id="warn-ev" hidden></p>
+      </div>
+    </div>
+
+    <details class="assumptions" id="anlage-advanced">
+      <summary>Erweiterte Einstellungen</summary>
+      <div class="assumptions-body">
+        <label class="field">
+          Ladeleistung Speicher (kW)
+          <input type="number" id="in-speicher-leistung" min="0" step="0.5" value="3" />
+          <input type="range" id="in-speicher-leistung-slider" min="0" max="20" step="0.5" value="3" aria-label="Ladeleistung Speicher (kW), Regler" />
+          <span class="hint">Maximale Ladeleistung des Speicher-Wechselrichters aus dem Netz. Üblich bei Heimspeichern: 3 kW.</span>
+        </label>
+        <label class="field">
+          Gewünschte Netzstrom-Ladung Speicher (kWh/Jahr)
+          <input type="number" id="in-netz-speicher" min="0" step="50" value="800" />
+          <input type="range" id="in-netz-speicher-slider" min="0" max="5000" step="50" value="800" aria-label="Gewünschte Netzstrom-Ladung Speicher (kWh/Jahr), Regler" />
+          <span class="hint">Wie viel soll der Speicher künftig zusätzlich mit günstigem Netzstrom laden?</span>
+        </label>
+        <label class="field">
+          Ladeleistung Wallbox (kW)
+          <input type="number" id="in-ev-leistung" min="0" step="0.1" value="11" />
+          <input type="range" id="in-ev-leistung-slider" min="0" max="22" step="0.5" value="11" aria-label="Ladeleistung Wallbox (kW), Regler" />
+          <span class="hint">Maximale Ladeleistung der Wallbox aus dem Netz. Nur relevant, wenn ein E-Auto vorhanden ist. Üblich: 11 kW.</span>
+        </label>
+        <label class="field">
+          Gewünschte Netzstrom-Ladung E-Auto (kWh/Jahr)
+          <input type="number" id="in-netz-ev" min="0" step="50" value="1500" />
+          <input type="range" id="in-netz-ev-slider" min="0" max="8000" step="50" value="1500" aria-label="Gewünschte Netzstrom-Ladung E-Auto (kWh/Jahr), Regler" />
+          <span class="hint">Wie viel soll das Fahrzeug künftig zusätzlich mit günstigem Netzstrom laden?</span>
+        </label>
+      </div>
+    </details>
+
+    <hr class="rule" />
+
+    <div class="section-head" style="margin-bottom:16px">
+      <div class="kicker">Vergütungsvergleich</div>
+      <h2 style="font-size:21px">Wie viel Ersparnis bringt welche Option pro Jahr?</h2>
+      <p class="lede">Alle Euro-Beträge unten sind eine geschätzte jährliche <strong>Ersparnis auf der Stromrechnung</strong> – kein ausgezahlter Betrag. PV-Anteil bewertet zum Eigenverbrauchspreis (vermiedener Netzbezug), freier Netzanteil zum Arbitrage-Spread (Preisvorteil durch günstiges Laden). <strong>Annahme:</strong> Ihr Haushalt verbraucht übers Jahr genug Strom, um die aus Speicher bzw. E-Auto entnommene Energie auch tatsächlich zu nutzen – bei sehr geringem Jahresverbrauch fällt die reale Ersparnis niedriger aus als hier gezeigt.</p>
+    </div>
+
+    <details class="assumptions" id="assumptions">
+      <summary>Annahmen anpassen</summary>
+      <div class="assumptions-body">
+        <label class="field">
+          Ersparnis je kWh Eigenverbrauch/Förderung (ct/kWh)
+          <input type="number" id="in-strompreis" min="0" step="0.5" value="32" />
+          <span class="hint">Meist der Haushaltsstrompreis, den Eigenverbrauch verdrängt. Zum Vergleich: aktuelle EEG-Einspeisevergütung Teileinspeisung ≤10 kWp (Stand 01.08.2026): 7,70 ct/kWh.</span>
+        </label>
+        <label class="field">
+          Arbitrage-Spanne für Netzanteil (ct/kWh)
+          <input type="number" id="in-arbitrage" min="0" step="0.5" value="9" />
+          <span class="hint">Realistische Preisdifferenz zwischen günstigem Ladezeitpunkt und Nutzungswert am Markt/im Haushalt</span>
+        </label>
+        <label class="field">
+          Zusatzkosten Abgrenzungsoption (€/Jahr)
+          <input type="number" id="in-messkosten" min="0" step="5" value="0" />
+          <span class="hint">Optional: Mehrkosten für Zählerkonzept/Energiemanagement, falls bekannt</span>
+        </label>
+        <label class="field">
+          Vollzyklen Speicher pro Jahr (Rechen-Annahme)
+          <input type="number" id="in-zyklen" min="0" step="10" value="250" />
+          <span class="hint">Nur Schätzung für den bereits heute förderfähigen PV-Anteil, keine Kundenfrage. Üblich: 200–300 Vollzyklen/Jahr bei einem Heimspeicher.</span>
+        </label>
+        <label class="field">
+          Verfügbare günstige Ladestunden pro Jahr
+          <input type="number" id="in-ladestunden" min="0" step="50" value="1460" />
+          <span class="hint">Zeitfenster mit günstigem Börsenpreis bzw. Netzsignal, in dem Speicher/E-Auto realistisch Netzstrom aufnehmen können (Annahme: ca. 4 Std./Tag).</span>
+        </label>
+      </div>
+    </details>
+
+    <div class="grid-3" style="margin-top:20px">
+      <div class="card result-card" id="rc-a">
+        <div class="opt-head">
+          <h3 class="card-title">Ausschließlichkeit</h3>
+          <span class="badge easy">kein Mehraufwand</span>
+        </div>
+        <p class="card-sub">Geschätzte jährliche Ersparnis, keine Auszahlung</p>
+        <div class="result-value" id="rv-a">–<span class="cur">€/Jahr</span></div>
+        <div class="result-note" id="rn-a"></div>
+      </div>
+      <div class="card result-card" id="rc-b">
+        <div class="opt-head">
+          <h3 class="card-title">Abgrenzungsoption</h3>
+          <span class="badge flex">max. Flexibilität</span>
+        </div>
+        <p class="card-sub">Geschätzte jährliche Ersparnis, keine Auszahlung</p>
+        <div class="result-value" id="rv-b">–<span class="cur">€/Jahr</span></div>
+        <div class="result-note" id="rn-b"></div>
+      </div>
+      <div class="card result-card" id="rc-c">
+        <div class="opt-head">
+          <h3 class="card-title">Pauschaloption</h3>
+          <span class="badge mid">bis 30 kWp</span>
+        </div>
+        <p class="card-sub">Geschätzte jährliche Ersparnis, keine Auszahlung</p>
+        <div class="result-value" id="rv-c">–<span class="cur">€/Jahr</span></div>
+        <div class="result-note" id="rn-c"></div>
+      </div>
+    </div>
+
+    <div class="card chart-card" style="margin-top:20px">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h3 class="card-title">Zusammensetzung des Jahresdurchsatzes</h3>
+          <p class="card-sub" style="margin-bottom:0">Geförderter/PV-Anteil vs. frei am Markt nutzbarer Netzanteil, je Option – Zahl am Balkenende ist die geschätzte Ersparnis</p>
+        </div>
+        <button class="table-toggle-btn" id="toggle-table" aria-expanded="false">Als Tabelle anzeigen</button>
+      </div>
+
+      <div class="chart-legend" style="margin-top:18px">
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--chart-pv)"></span>Geförderter PV-Anteil</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--chart-market)"></span>Freier Marktanteil (Netzstrom)</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--chart-unused)"></span>Ungenutztes Potenzial</span>
+      </div>
+
+      <div class="bar-rows" id="bar-rows" style="margin-top:20px"></div>
+
+      <div id="table-wrap" style="display:none; overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Option</th><th>PV-Anteil (kWh)</th><th>Netzanteil (kWh)</th><th>Ungenutzt (kWh)</th><th>Ersparnis (€/Jahr)</th></tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="ico">!</span>
+      <div>
+        <strong>Vereinfachte Modellrechnung.</strong> Alle Euro-Beträge sind eine geschätzte Ersparnis durch vermiedenen Netzstrombezug bzw. Preisvorteil beim Laden – kein separat ausgezahlter Betrag (anders als z. B. die EEG-Einspeisevergütung, die hier nicht mitgerechnet ist). Die tatsächliche Berechnungsformel der Pauschaloption (positive Day-Ahead-Stunden) sowie regionale Netzentgelt- und Strompreise weichen im Einzelfall ab. Diese Ansicht dient der ersten Einordnung im Kundengespräch, nicht als verbindliches Angebot.
+      </div>
+    </div>
+  </section>
+
+  <div class="sources">
+    <h4>Quellen &amp; Stand der Recherche (August 2026)</h4>
+    <ol>
+      <li>pv magazine Deutschland: „Speicher aus dem Netz laden und förderfähig bleiben – Bundesnetzagentur legt MiSpeL-Entwurf vor", 22.09.2025</li>
+      <li>electrive.net: „AgNes und MiSpeL: Neue Regeln für Ladeparks und bidirektionales Laden", 06.08.2026</li>
+      <li>enyo energy: „Mit Batteriespeicher Geld verdienen? MiSpeL &amp; §14a"</li>
+      <li>zfk.de: „Speicher, E-Autos und Flexibilität: Wohin die Netzagentur steuert"</li>
+      <li>Bundesnetzagentur, §14a EnWG – Integration von steuerbaren Verbrauchseinrichtungen</li>
+      <li>EEG-Vergütungssätze ab 01.08.2026 (Teileinspeisung ≤10 kWp: 7,70 ct/kWh)</li>
+    </ol>
+  </div>
+
+</main>
+
+<script src="js/kompass.js"></script>
+
+</body>
+</html>
