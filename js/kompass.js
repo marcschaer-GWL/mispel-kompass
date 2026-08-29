@@ -21,6 +21,7 @@
   /* ---------- Inputs ---------- */
   var $pv = document.getElementById("in-pv");
   var $speicher = document.getElementById("in-speicher");
+  var $jahresverbrauch = document.getElementById("in-jahresverbrauch");
   var $speicherLeistung = document.getElementById("in-speicher-leistung");
   var $netzSpeicher = document.getElementById("in-netz-speicher");
   var $evJa = document.getElementById("ev-ja");
@@ -41,6 +42,7 @@
   var $ctxEvMax = document.getElementById("ctx-ev-max");
   var $warnSpeicher = document.getElementById("warn-speicher");
   var $warnEv = document.getElementById("warn-ev");
+  var $warnVerbrauch = document.getElementById("warn-verbrauch");
 
   function num(el, fallback) {
     var v = parseFloat(el.value);
@@ -59,6 +61,7 @@
   function computeModel() {
     var pvKwp = num($pv, 0);
     var speicherKwh = num($speicher, 0);
+    var jahresverbrauchKwh = num($jahresverbrauch, 0);
     var speicherLeistung = num($speicherLeistung, 0);
     var netzSpeicherGewuenscht = num($netzSpeicher, 0);
     var evVorhanden = $evJa.getAttribute("aria-pressed") === "true";
@@ -115,12 +118,103 @@
       applicable: pauschalZulaessig
     };
 
+    // Jahresstromverbrauch: der Durchsatz aus Speicher + E-Auto kann real nur selbst
+    // verbraucht werden, wenn der Haushalt übers Jahr mindestens so viel Strom braucht.
+    var verbrauchUeberschritten = durchsatz > jahresverbrauchKwh;
+
     return {
       pvKwp: pvKwp, speicherKwh: speicherKwh, durchsatz: durchsatz, deckel: deckel, pauschalZulaessig: pauschalZulaessig,
       speicherNetzMax: speicherNetzMax, speicherGekappt: speicherGekappt,
       evVorhanden: evVorhanden, evNetzMax: evNetzMax, evGekappt: evGekappt,
+      jahresverbrauchKwh: jahresverbrauchKwh, verbrauchUeberschritten: verbrauchUeberschritten,
       a: a, b: b, c: c
     };
+  }
+
+  /* ---------- Echtdaten-Berechnung (Modul 03) ----------
+     Simuliert je Tag des geladenen Day-Ahead-Preisjahres (window.MISPEL_PREISDATEN,
+     Quelle energy-charts.info), wie viel Energie realistisch in den günstigsten
+     Viertelstunden geladen und in den teuersten wieder verkauft/genutzt werden kann
+     (begrenzt durch Ladeleistung und Speicherkapazität bzw. die vom Nutzer
+     eingestellten "günstigen Ladestunden pro Jahr"). Daraus ergibt sich eine
+     anlagenscharfe effektive Arbitrage-Spanne (ct/kWh), die die pauschale
+     Annahme im Feld "Arbitrage-Spanne" ersetzt. Rundwirkungsgrad 90 % ist eine
+     feste, im Statustext ausgewiesene Annahme (kein eigenes Eingabefeld, um das
+     Formular schlank zu halten). */
+  function computeRealPriceRate(speicherKwh, speicherLeistung, ladestundenVal) {
+    var data = window.MISPEL_PREISDATEN;
+    if (!data || !data.prices || !data.prices.length || speicherKwh <= 0 || speicherLeistung <= 0) return null;
+
+    var stepMin = data.step_minutes || 15;
+    var perDayCount = Math.round((24 * 60) / stepMin);
+    var nDays = Math.floor(data.prices.length / perDayCount);
+    if (nDays < 1) return null;
+
+    var eff = 0.9;
+    var hoursPerDay = ladestundenVal / 365;
+    var dailyVol = Math.min(speicherKwh, speicherLeistung * hoursPerDay);
+    if (dailyVol <= 0) return null;
+    var maxPerSlot = speicherLeistung * (stepMin / 60);
+
+    function allocate(sortedPrices, vol) {
+      var remaining = vol, cost = 0, energy = 0;
+      for (var i = 0; i < sortedPrices.length && remaining > 0; i++) {
+        var take = Math.min(maxPerSlot, remaining);
+        cost += (sortedPrices[i] * take) / 1000; // EUR/MWh * kWh / 1000 = EUR
+        energy += take;
+        remaining -= take;
+      }
+      return { cost: cost, energy: energy };
+    }
+
+    var totalChargeCost = 0, totalChargeEnergy = 0, totalSellValue = 0;
+    for (var d = 0; d < nDays; d++) {
+      var day = data.prices.slice(d * perDayCount, (d + 1) * perDayCount);
+      var asc = day.slice().sort(function (a, b) { return a - b; });
+      var desc = day.slice().sort(function (a, b) { return b - a; });
+      var c = allocate(asc, dailyVol);
+      var s = allocate(desc, dailyVol * eff);
+      totalChargeCost += c.cost;
+      totalChargeEnergy += c.energy;
+      totalSellValue += s.cost;
+    }
+    if (totalChargeEnergy <= 0) return null;
+
+    return {
+      rateCt: ((totalSellValue - totalChargeCost) / totalChargeEnergy) * 100,
+      volumeKwhYear: (totalChargeEnergy * 365) / nDays,
+      nDays: nDays,
+      eff: eff
+    };
+  }
+
+  function preisdatenPeriodLabel() {
+    var data = window.MISPEL_PREISDATEN;
+    if (!data || !data.start_utc) return "";
+    var start = new Date(data.start_utc);
+    var end = new Date(start.getTime() + data.n_days * 24 * 3600 * 1000);
+    var fmt = function (dt) { return dt.toLocaleDateString("de-DE", { month: "short", year: "numeric" }); };
+    return fmt(start) + "–" + fmt(end);
+  }
+
+  var $btnEchtdaten = document.getElementById("btn-echtdaten");
+  var $echtdatenStatus = document.getElementById("echtdaten-status");
+  if ($btnEchtdaten) {
+    $btnEchtdaten.addEventListener("click", function () {
+      var speicherKwh = num($speicher, 0);
+      var speicherLeistungVal = num($speicherLeistung, 0);
+      var ladestundenVal = num($ladestunden, 0);
+      var result = computeRealPriceRate(speicherKwh, speicherLeistungVal, ladestundenVal);
+      if (!result) {
+        $echtdatenStatus.textContent = "Für die Echtdaten-Berechnung bitte Speicherkapazität und Ladeleistung oberhalb 0 eintragen.";
+        $echtdatenStatus.classList.remove("active");
+        return;
+      }
+      $arbitrage.value = result.rateCt.toFixed(1);
+      $echtdatenStatus.textContent = "Echtdaten aktiv: " + result.rateCt.toFixed(1) + " ct/kWh effektive Arbitrage-Spanne für " + fmtKWH.format(speicherKwh) + " kWh / " + speicherLeistungVal + " kW, simuliert aus " + result.nDays + " Tagen realen Day-Ahead-Preisen (energy-charts.info, " + preisdatenPeriodLabel() + ", " + Math.round(result.eff * 100) + " % Wirkungsgrad angenommen).";
+      $echtdatenStatus.classList.add("active");
+      renderAll();
+    });
   }
 
   /* ---------- Panel 3 render ---------- */
@@ -137,6 +231,11 @@
     $warnSpeicher.hidden = !m.speicherGekappt;
     if (m.speicherGekappt) {
       $warnSpeicher.textContent = "Gewünschte Menge übersteigt die technisch mögliche Ladeleistung – wird auf " + fmtKWH.format(m.speicherNetzMax) + " kWh/Jahr gekappt.";
+    }
+
+    $warnVerbrauch.hidden = !m.verbrauchUeberschritten;
+    if (m.verbrauchUeberschritten) {
+      $warnVerbrauch.textContent = "Speicher + E-Auto würden zusammen " + fmtKWH.format(m.durchsatz) + " kWh/Jahr umsetzen – mehr als Ihr angegebener Jahresstromverbrauch von " + fmtKWH.format(m.jahresverbrauchKwh) + " kWh. Das kann real nicht vollständig selbst verbraucht werden.";
     }
 
     if (m.evVorhanden) {
@@ -245,7 +344,7 @@
     renderChart(m);
   }
 
-  [$pv, $speicher, $speicherLeistung, $netzSpeicher, $evAkku, $evLeistung, $netzEv, $zyklen, $ladestunden, $strompreis, $arbitrage, $messkosten].forEach(function (el) {
+  [$pv, $speicher, $jahresverbrauch, $speicherLeistung, $netzSpeicher, $evAkku, $evLeistung, $netzEv, $zyklen, $ladestunden, $strompreis, $arbitrage, $messkosten].forEach(function (el) {
     el.addEventListener("input", renderAll);
   });
 
@@ -267,6 +366,7 @@
   [
     ["in-pv", "in-pv-slider"],
     ["in-speicher", "in-speicher-slider"],
+    ["in-jahresverbrauch", "in-jahresverbrauch-slider"],
     ["in-speicher-leistung", "in-speicher-leistung-slider"],
     ["in-netz-speicher", "in-netz-speicher-slider"],
     ["in-ev-akku", "in-ev-akku-slider"],

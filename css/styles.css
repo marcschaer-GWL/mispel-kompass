@@ -76,7 +76,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
 }
 .chip.status-warn { color: var(--warn-text); background: var(--warn-bg); border-color: var(--warn-border); }
 .chip.status-good { color: var(--green); background: var(--green-soft); border-color: var(--green-soft-border); }
-.chip.status-critical { color: var(--error-text); background: rgba(248, 81, 73, 0.14); border-color: rgba(248, 81, 73, 0.4); }
+.chip.status-critical { color: var(--error-text); background: var(--error-soft); border-color: var(--error-soft-border); }
 .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
 .disclaimer {
@@ -159,7 +159,7 @@ details.assumptions summary {
   list-style: none; display: flex; align-items: center; justify-content: space-between;
 }
 details.assumptions summary::-webkit-details-marker { display: none; }
-details.assumptions summary::after { content: "+"; font-family: var(--font-mono); color: var(--text-muted); font-size: 16px; }
+details.assumptions summary::after { content: "+"; font-family: var(--font-mono); color: var(--gold); font-size: 16px; font-weight: 700; }
 details.assumptions[open] summary::after { content: "–"; }
 .assumptions-body { padding: 4px 16px 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 @media (max-width: 620px) { .assumptions-body { grid-template-columns: 1fr; } }
@@ -234,6 +234,11 @@ details.assumptions[open] summary::after { content: "–"; }
   background: none; border: 1px solid var(--border-strong); border-radius: 7px; padding: 6px 11px; cursor: pointer;
 }
 .table-toggle-btn:hover { background: var(--surface-hover); }
+.table-toggle-btn:disabled { opacity: 0.5; cursor: default; }
+
+.echtdaten-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 24px; }
+.echtdaten-status { font-size: 12.5px; color: var(--text-muted); margin: 0; flex: 1 1 260px; }
+.echtdaten-status.active { color: var(--green); }
 .data-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
 .data-table th, .data-table td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .data-table th:first-child, .data-table td:first-child { text-align: left; font-family: var(--font-body); font-weight: 600; }

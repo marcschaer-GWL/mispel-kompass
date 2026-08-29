@@ -167,11 +167,11 @@
     <div class="section-head">
       <div class="kicker">03 · Ihre Anlage</div>
       <h2>Eckdaten von PV-Anlage, Speicher und E-Auto</h2>
-      <p class="lede">Nur drei Angaben sind Pflicht – der Vergütungsvergleich aktualisiert sich live mit jeder Änderung. Ladeleistung und gewünschte Netzstrom-Menge sind unter „Erweiterte Einstellungen" bereits mit üblichen Werten vorbelegt und bei Bedarf anpassbar.</p>
+      <p class="lede">Wenige Angaben sind Pflicht – der Vergütungsvergleich aktualisiert sich live mit jeder Änderung. Ladeleistung und gewünschte Netzstrom-Menge sind jeweils unter „Erweiterte Einstellungen" direkt bei PV/Speicher bzw. E-Auto bereits mit üblichen Werten vorbelegt und bei Bedarf anpassbar.</p>
     </div>
 
     <div class="card">
-      <div class="grid-2">
+      <div class="grid-3">
         <label class="field">
           PV-Anlagenleistung (kWp)
           <input type="number" id="in-pv" min="0" step="0.1" value="10" />
@@ -184,6 +184,12 @@
           <input type="range" id="in-speicher-slider" min="0" max="60" step="1" value="10" aria-label="Speicherkapazität (kWh), Regler" />
           <span class="hint">Nutzbare Kapazität des Batteriespeichers</span>
         </label>
+        <label class="field">
+          Jahresstromverbrauch (kWh)
+          <input type="number" id="in-jahresverbrauch" min="0" step="100" value="4000" />
+          <input type="range" id="in-jahresverbrauch-slider" min="0" max="20000" step="100" value="4000" aria-label="Jahresstromverbrauch (kWh), Regler" />
+          <span class="hint">Gesamter Haushaltsverbrauch pro Jahr laut letzter Abrechnung</span>
+        </label>
       </div>
 
       <div class="context-strip">
@@ -192,6 +198,25 @@
         <div class="context-item"><span class="k">Pauschaloption</span><span class="v" id="ctx-zulaessig">–</span></div>
       </div>
       <p class="field-warn" id="warn-speicher" hidden></p>
+      <p class="field-warn" id="warn-verbrauch" hidden></p>
+
+      <details class="assumptions" id="pv-advanced" style="margin-top:16px">
+        <summary>Erweiterte Einstellungen</summary>
+        <div class="assumptions-body">
+          <label class="field">
+            Ladeleistung Speicher (kW)
+            <input type="number" id="in-speicher-leistung" min="0" step="0.5" value="3" />
+            <input type="range" id="in-speicher-leistung-slider" min="0" max="20" step="0.5" value="3" aria-label="Ladeleistung Speicher (kW), Regler" />
+            <span class="hint">Maximale Ladeleistung des Speicher-Wechselrichters aus dem Netz. Üblich bei Heimspeichern: 3 kW.</span>
+          </label>
+          <label class="field">
+            Gewünschte Netzstrom-Ladung Speicher (kWh/Jahr)
+            <input type="number" id="in-netz-speicher" min="0" step="50" value="800" />
+            <input type="range" id="in-netz-speicher-slider" min="0" max="5000" step="50" value="800" aria-label="Gewünschte Netzstrom-Ladung Speicher (kWh/Jahr), Regler" />
+            <span class="hint">Wie viel soll der Speicher künftig zusätzlich mit günstigem Netzstrom laden?</span>
+          </label>
+        </div>
+      </details>
     </div>
 
     <div class="card" style="margin-top:16px">
@@ -216,45 +241,33 @@
           <div class="context-item"><span class="k">Technisch max. E-Auto (Netz)</span><span class="v mono" id="ctx-ev-max">–</span></div>
         </div>
         <p class="field-warn" id="warn-ev" hidden></p>
+
+        <details class="assumptions" id="ev-advanced" style="margin-top:16px">
+          <summary>Erweiterte Einstellungen</summary>
+          <div class="assumptions-body">
+            <label class="field">
+              Ladeleistung Wallbox (kW)
+              <input type="number" id="in-ev-leistung" min="0" step="0.1" value="11" />
+              <input type="range" id="in-ev-leistung-slider" min="0" max="22" step="0.5" value="11" aria-label="Ladeleistung Wallbox (kW), Regler" />
+              <span class="hint">Maximale Ladeleistung der Wallbox aus dem Netz. Üblich: 11 kW.</span>
+            </label>
+            <label class="field">
+              Gewünschte Netzstrom-Ladung E-Auto (kWh/Jahr)
+              <input type="number" id="in-netz-ev" min="0" step="50" value="1500" />
+              <input type="range" id="in-netz-ev-slider" min="0" max="8000" step="50" value="1500" aria-label="Gewünschte Netzstrom-Ladung E-Auto (kWh/Jahr), Regler" />
+              <span class="hint">Wie viel soll das Fahrzeug künftig zusätzlich mit günstigem Netzstrom laden?</span>
+            </label>
+          </div>
+        </details>
       </div>
     </div>
-
-    <details class="assumptions" id="anlage-advanced">
-      <summary>Erweiterte Einstellungen</summary>
-      <div class="assumptions-body">
-        <label class="field">
-          Ladeleistung Speicher (kW)
-          <input type="number" id="in-speicher-leistung" min="0" step="0.5" value="3" />
-          <input type="range" id="in-speicher-leistung-slider" min="0" max="20" step="0.5" value="3" aria-label="Ladeleistung Speicher (kW), Regler" />
-          <span class="hint">Maximale Ladeleistung des Speicher-Wechselrichters aus dem Netz. Üblich bei Heimspeichern: 3 kW.</span>
-        </label>
-        <label class="field">
-          Gewünschte Netzstrom-Ladung Speicher (kWh/Jahr)
-          <input type="number" id="in-netz-speicher" min="0" step="50" value="800" />
-          <input type="range" id="in-netz-speicher-slider" min="0" max="5000" step="50" value="800" aria-label="Gewünschte Netzstrom-Ladung Speicher (kWh/Jahr), Regler" />
-          <span class="hint">Wie viel soll der Speicher künftig zusätzlich mit günstigem Netzstrom laden?</span>
-        </label>
-        <label class="field">
-          Ladeleistung Wallbox (kW)
-          <input type="number" id="in-ev-leistung" min="0" step="0.1" value="11" />
-          <input type="range" id="in-ev-leistung-slider" min="0" max="22" step="0.5" value="11" aria-label="Ladeleistung Wallbox (kW), Regler" />
-          <span class="hint">Maximale Ladeleistung der Wallbox aus dem Netz. Nur relevant, wenn ein E-Auto vorhanden ist. Üblich: 11 kW.</span>
-        </label>
-        <label class="field">
-          Gewünschte Netzstrom-Ladung E-Auto (kWh/Jahr)
-          <input type="number" id="in-netz-ev" min="0" step="50" value="1500" />
-          <input type="range" id="in-netz-ev-slider" min="0" max="8000" step="50" value="1500" aria-label="Gewünschte Netzstrom-Ladung E-Auto (kWh/Jahr), Regler" />
-          <span class="hint">Wie viel soll das Fahrzeug künftig zusätzlich mit günstigem Netzstrom laden?</span>
-        </label>
-      </div>
-    </details>
 
     <hr class="rule" />
 
     <div class="section-head" style="margin-bottom:16px">
       <div class="kicker">Vergütungsvergleich</div>
       <h2 style="font-size:21px">Wie viel Ersparnis bringt welche Option pro Jahr?</h2>
-      <p class="lede">Alle Euro-Beträge unten sind eine geschätzte jährliche <strong>Ersparnis auf der Stromrechnung</strong> – kein ausgezahlter Betrag. PV-Anteil bewertet zum Eigenverbrauchspreis (vermiedener Netzbezug), freier Netzanteil zum Arbitrage-Spread (Preisvorteil durch günstiges Laden). <strong>Annahme:</strong> Ihr Haushalt verbraucht übers Jahr genug Strom, um die aus Speicher bzw. E-Auto entnommene Energie auch tatsächlich zu nutzen – bei sehr geringem Jahresverbrauch fällt die reale Ersparnis niedriger aus als hier gezeigt.</p>
+      <p class="lede">Alle Euro-Beträge unten sind eine geschätzte jährliche <strong>Ersparnis auf der Stromrechnung</strong> – kein ausgezahlter Betrag. PV-Anteil bewertet zum Eigenverbrauchspreis (vermiedener Netzbezug), freier Netzanteil zum Arbitrage-Spread (Preisvorteil durch günstiges Laden). <strong>Annahme:</strong> Ihr oben angegebener Jahresstromverbrauch reicht aus, um die aus Speicher bzw. E-Auto entnommene Energie auch tatsächlich selbst zu nutzen – das Tool warnt, falls das rechnerisch nicht möglich ist.</p>
     </div>
 
     <details class="assumptions" id="assumptions">
@@ -267,8 +280,8 @@
         </label>
         <label class="field">
           Arbitrage-Spanne für Netzanteil (ct/kWh)
-          <input type="number" id="in-arbitrage" min="0" step="0.5" value="9" />
-          <span class="hint">Realistische Preisdifferenz zwischen günstigem Ladezeitpunkt und Nutzungswert am Markt/im Haushalt</span>
+          <input type="number" id="in-arbitrage" min="0" step="0.5" value="10" />
+          <span class="hint">Pauschale, konservative Annahme aus realen Day-Ahead-Preisen (energy-charts.info, DE-LU, 10/2025–08/2026): Ø Spread günstigste/teuerste 4 Std./Tag brutto 11,7 ct/kWh, hier bereits mit Wirkungsgradverlust abgerundet. Für eine anlagenscharfe Berechnung unten „Mit echten Marktpreisen berechnen" nutzen.</span>
         </label>
         <label class="field">
           Zusatzkosten Abgrenzungsoption (€/Jahr)
@@ -287,6 +300,11 @@
         </label>
       </div>
     </details>
+
+    <div class="echtdaten-row">
+      <button type="button" class="table-toggle-btn" id="btn-echtdaten">Mit echten Marktpreisen berechnen</button>
+      <p class="echtdaten-status" id="echtdaten-status">Aktuell: pauschale Annahme oben. Berechnet die Arbitrage-Spanne anlagenscharf aus realen Day-Ahead-Viertelstundenpreisen (energy-charts.info) für Ihre eingegebene Speichergröße &amp; Ladeleistung.</p>
+    </div>
 
     <div class="grid-3" style="margin-top:20px">
       <div class="card result-card" id="rc-a">
@@ -367,6 +385,7 @@
 
 </main>
 
+<script src="js/preisdaten-de-lu.js"></script>
 <script src="js/kompass.js"></script>
 
 </body>

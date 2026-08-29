@@ -43,6 +43,8 @@
   --warn-border: rgba(227, 160, 8, 0.5);
   --warn-text: #F2C14E;
   --error-text: #F85149;
+  --error-soft: rgba(248, 81, 73, 0.14);
+  --error-soft-border: rgba(248, 81, 73, 0.4);
 
   /* ---- Fokus ----
      Laut Vorgabe ist Gold explizit auch die Fokus-Highlight-Farbe
