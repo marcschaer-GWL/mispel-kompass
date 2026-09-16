@@ -45,15 +45,97 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
 ::selection { background: var(--gold-soft); }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
+/* ============ Entwicklungs-Overlay (Frontend-Vorgaben.md) ============
+   5mm-Raster + vertikale Symmetrieachse, standardmäßig aus. Einblendbar über
+   ?grid=1 in der URL (siehe kompass.js) — kein dauerhaftes UI-Element, das
+   Kunden im Gespräch stören würde. Vor Live-Gang unverändert lassen: Klasse
+   bleibt bestehen, wird nur nie mehr aktiviert, sobald final freigegeben. */
+body.dev-grid::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background-image:
+    linear-gradient(to right, rgba(227, 160, 8, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(227, 160, 8, 0.35) 1px, transparent 1px);
+  background-size: var(--grid) var(--grid);
+  background-position: calc(50% + var(--grid) / 2) 0;
+}
+body.dev-grid::after {
+  content: "";
+  position: fixed;
+  top: 0; bottom: 0; left: 50%;
+  width: 1px;
+  background: rgba(45, 164, 78, 0.9);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ============ Kopfzeile (Frontend-Vorgaben.md, fix & projektübergreifend gleich) ============
+   Vollbreite Bar (kein zentrierter, umrandeter Kasten), Claim exakt auf der
+   Bildschirmmitte durch zwei gleich breite Aussenspalten (9 Rasterfelder), Login als
+   Pill-Button statt Text-Link. Referenz-Screenshot, Stand 2026-09-16 — ersetzt die
+   vormalige Kasten-Variante aus Vorgaben-Kontrollseite.html. */
+.site-header {
+  width: 100%;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--grid) calc(var(--grid) * 2);
+  display: grid;
+  grid-template-columns: calc(var(--grid) * 9) 1fr calc(var(--grid) * 9);
+  align-items: center;
+  gap: var(--grid);
+}
+.site-header .header-logo { grid-column: 1; display: flex; align-items: center; }
+.site-header .header-logo img { height: calc(var(--grid) * 2); width: auto; display: block; }
+.site-header .header-claim {
+  grid-column: 2;
+  height: calc(var(--grid) * 2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.site-header .header-login { grid-column: 3; height: calc(var(--grid) * 2); display: flex; justify-content: flex-end; }
+.site-header .btn-pill {
+  display: flex; align-items: center; height: 100%;
+  padding: 0 calc(var(--grid) * 1.6);
+  border: 1px solid var(--border-strong); border-radius: 100px;
+  color: var(--text-primary); text-decoration: none;
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  transition: border-color .15s ease, color .15s ease;
+}
+.site-header .btn-pill:hover { border-color: var(--gold); color: var(--gold); }
+@media (max-width: 620px) { .site-header .header-claim { font-size: 12px; } }
+
+/* Seitentitel direkt unter der Kopfzeile (Frontend-Vorgaben.md, "Kopfzeile") */
+.page-title-bar {
+  width: 100%;
+  min-height: calc(var(--grid) * 2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--grid) * 0.6) 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.page-title-bar h1 { font-size: 22px; text-align: center; }
+
 /* ============ Page shell ============ */
-.shell { max-width: 980px; margin: 0 auto; padding: 0 20px 80px; }
+.shell { max-width: var(--page-width); margin: 0 auto; padding: 0 20px 80px; }
 
 /* ============ Masthead ============ */
 .masthead {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
-.masthead-inner { max-width: 980px; margin: 0 auto; padding: 34px 20px 24px; }
+.masthead-inner { max-width: var(--page-width); margin: 0 auto; padding: 34px 20px 24px; }
 .eyebrow {
   font-family: var(--font-body);
   font-size: 12px;
@@ -63,7 +145,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
   color: var(--gold);
   margin-bottom: 10px;
 }
-.masthead h1 { font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.02em; }
+/* War vormals h1 (Seiten-H1) — der ist jetzt die feste .page-title-bar oben;
+   hier nur noch als Lead-Absatz mit gleicher optischer Wirkung. */
+.masthead .lead { font-size: 27px; font-weight: 700; letter-spacing: -0.02em; }
+@media (max-width: 620px) { .masthead .lead { font-size: 20px; } }
 .masthead .dek { font-family: var(--font-body); color: var(--text-secondary); font-size: 16px; margin-top: 10px; max-width: 58ch; }
 .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .chip {
@@ -81,13 +166,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
 
 .disclaimer {
   margin-top: 18px; padding: 11px 14px; font-size: 12.5px; color: var(--text-muted);
-  background: var(--surface-hover); border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-hover); border-radius: var(--grid); border: 1px solid var(--border);
   max-width: none;
 }
 
 /* ============ Tab nav ============ */
 .tabnav-wrap { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--border); }
-.tabnav { max-width: 980px; margin: 0 auto; padding: 0 20px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabnav { max-width: var(--page-width); margin: 0 auto; padding: 0 20px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
 .tabnav::-webkit-scrollbar { display: none; }
 .tab {
   font-family: var(--font-body); font-size: 13.5px; font-weight: 600; color: var(--text-muted);
@@ -109,7 +194,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
 .section-head .lede { font-family: var(--font-body); color: var(--text-secondary); font-size: 15px; margin-top: 8px; }
 
 .card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--grid);
   padding: 22px 24px; box-shadow: 0 1px 2px var(--shadow);
 }
 .stack { display: flex; flex-direction: column; gap: 16px; }
@@ -145,7 +230,7 @@ label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px
 label.field .hint { font-weight: 400; font-size: 12px; color: var(--text-muted); }
 input[type="number"] {
   font-family: var(--font-mono); font-size: 16px; font-variant-numeric: tabular-nums;
-  padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border-strong);
+  padding: 10px 12px; border-radius: var(--grid); border: 1.5px solid var(--border-strong);
   background: var(--bg); color: var(--text-primary); width: 100%;
 }
 input[type="number"]:focus { border-color: var(--gold); }
@@ -153,7 +238,7 @@ input[type="range"] { width: 100%; accent-color: var(--gold); }
 .range-row { display: flex; align-items: center; gap: 12px; }
 .range-row output { font-family: var(--font-mono); font-weight: 700; font-size: 15px; min-width: 3.4em; text-align: right; color: var(--gold); }
 
-details.assumptions { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-hover); }
+details.assumptions { border: 1px solid var(--border); border-radius: var(--grid); background: var(--surface-hover); }
 details.assumptions summary {
   cursor: pointer; padding: 13px 16px; font-size: 13.5px; font-weight: 700; color: var(--text-secondary);
   list-style: none; display: flex; align-items: center; justify-content: space-between;
@@ -245,7 +330,7 @@ details.assumptions[open] summary::after { content: "–"; }
 .data-table thead th { color: var(--text-muted); font-family: var(--font-body); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
 
 .callout {
-  display: flex; gap: 12px; padding: 15px 16px; border-radius: 10px; border: 1px solid var(--border);
+  display: flex; gap: 12px; padding: 15px 16px; border-radius: var(--grid); border: 1px solid var(--border);
   background: var(--surface-hover); font-size: 13.5px; color: var(--text-secondary);
 }
 .callout.warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--text-primary); }

@@ -13,6 +13,15 @@
 :root {
   color-scheme: dark;
 
+  /* ---- Raster (Frontend-Vorgaben.md, "Layout & Linien") ----
+     1 Rasterfeld = 5mm. Grundlage für Kopfzeile, Box-/Feld-Eck-Radius und
+     das Entwicklungs-Overlay unten. */
+  --grid: 5mm;
+  /* Seitenbreite = 65 Rasterfelder, 1:1 aus Vorgaben-Kontrollseite.html
+     übernommen — darauf ist das Kopfzeilen-Spaltenraster (9/12/15/12/9 = 57)
+     exakt abgestimmt, siehe css/styles.css ".site-header". */
+  --page-width: calc(var(--grid) * 65);
+
   /* ---- Basisflächen (1:1 aus theme.ts) ---- */
   --bg: #0D1117;
   --surface: #161B22;

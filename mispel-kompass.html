@@ -9,10 +9,18 @@
 </head>
 <body>
 
+<!-- Kopfzeile: fix & projektübergreifend identisch, siehe Frontend-Vorgaben.md -->
+<header class="site-header">
+  <div class="header-logo"><img src="assets/gwl-logo.svg" alt="GWL-Design Logo"></div>
+  <div class="header-claim">Grid Without Limits</div>
+  <div class="header-login"><a href="#" class="btn-pill">Anmelden</a></div>
+</header>
+<div class="page-title-bar"><h1>MiSpeL-Kompass</h1></div>
+
 <header class="masthead">
   <div class="masthead-inner">
     <div class="eyebrow">GWL-Design · Kunden-Wegweiser</div>
-    <h1>MiSpeL – Marktintegration von Speichern und Ladepunkten</h1>
+    <p class="lead">MiSpeL – Marktintegration von Speichern und Ladepunkten</p>
     <p class="dek">Was die neue Bundesnetzagentur-Regel für PV-Speicher, Batteriespeicher und Elektrofahrzeuge im netzdienlichen Betrieb bedeutet – und was sie für Ihre Anlage konkret bringt.</p>
     <div class="meta-row">
       <span class="chip"><span class="dot"></span>Festlegung nach §85d EEG (Stromspitzengesetz)</span>
@@ -387,6 +395,11 @@
 
 <script src="js/preisdaten-de-lu.js"></script>
 <script src="js/kompass.js"></script>
+<script>
+  // Entwicklungs-Overlay (5mm-Raster + Symmetrieachse) nur für internes Review,
+  // siehe Frontend-Vorgaben.md "Entwicklungs-Overlay". Vor Live-Gang entfernen.
+  if (new URLSearchParams(location.search).has('grid')) document.body.classList.add('dev-grid');
+</script>
 
 </body>
 </html>
