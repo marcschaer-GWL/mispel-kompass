@@ -22,7 +22,7 @@ body {
   background: var(--bg);
   color: var(--text-primary);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -125,7 +125,7 @@ body.dev-grid::after {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
-.page-title-bar h1 { font-size: 22px; text-align: center; }
+.page-title-bar h1 { font-size: 24px; text-align: center; }
 
 /* ============ Page shell ============ */
 .shell { max-width: var(--page-width); margin: 0 auto; padding: 0 20px 80px; }
@@ -149,11 +149,11 @@ body.dev-grid::after {
    hier nur noch als Lead-Absatz mit gleicher optischer Wirkung. */
 .masthead .lead { font-size: 27px; font-weight: 700; letter-spacing: -0.02em; }
 @media (max-width: 620px) { .masthead .lead { font-size: 20px; } }
-.masthead .dek { font-family: var(--font-body); color: var(--text-secondary); font-size: 16px; margin-top: 10px; max-width: 58ch; }
+.masthead .dek { font-family: var(--font-body); color: var(--text-secondary); font-size: 17px; margin-top: 10px; max-width: 58ch; }
 .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 700; padding: 5px 12px;
+  font-size: 13px; font-weight: 700; padding: 5px 12px;
   border-radius: 100px; border: 1px solid var(--border-strong);
   color: var(--text-secondary); background: var(--surface);
   text-transform: uppercase; letter-spacing: 0.06em;
@@ -165,7 +165,7 @@ body.dev-grid::after {
 .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
 .disclaimer {
-  margin-top: 18px; padding: 11px 14px; font-size: 12.5px; color: var(--text-muted);
+  margin-top: 18px; padding: 11px 14px; font-size: 14px; color: var(--text-muted);
   background: var(--surface-hover); border-radius: var(--grid); border: 1px solid var(--border);
   max-width: none;
 }
@@ -175,12 +175,12 @@ body.dev-grid::after {
 .tabnav { max-width: var(--page-width); margin: 0 auto; padding: 0 20px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
 .tabnav::-webkit-scrollbar { display: none; }
 .tab {
-  font-family: var(--font-body); font-size: 13.5px; font-weight: 600; color: var(--text-muted);
+  font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--text-muted);
   background: none; border: none; cursor: pointer; padding: 14px 14px 12px;
   display: flex; align-items: center; gap: 8px; white-space: nowrap;
   border-bottom: 2.5px solid transparent; transition: color .15s ease, border-color .15s ease;
 }
-.tab .num { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); border: 1px solid var(--border-strong); border-radius: 4px; padding: 1px 5px; }
+.tab .num { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); border: 1px solid var(--border-strong); border-radius: 4px; padding: 1px 5px; }
 .tab:hover { color: var(--text-primary); }
 .tab[aria-selected="true"] { color: var(--gold); border-bottom-color: var(--gold); }
 .tab[aria-selected="true"] .num { color: var(--gold); border-color: var(--gold); }
@@ -189,9 +189,9 @@ body.dev-grid::after {
 .panel { padding-top: 32px; }
 .panel[hidden] { display: none; }
 .section-head { margin-bottom: 22px; }
-.section-head .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
-.section-head h2 { font-size: 25px; }
-.section-head .lede { font-family: var(--font-body); color: var(--text-secondary); font-size: 15px; margin-top: 8px; }
+.section-head .kicker { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.section-head h2 { font-size: 28px; }
+.section-head .lede { font-family: var(--font-body); color: var(--text-secondary); font-size: 17px; margin-top: 8px; }
 
 .card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--grid);
@@ -202,10 +202,10 @@ body.dev-grid::after {
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 760px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
 
-h3.card-title { font-size: 17px; margin-bottom: 4px; }
-.card-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; }
+h3.card-title { font-size: 19px; margin-bottom: 4px; }
+.card-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 14px; }
 ul.clean { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-ul.clean li { padding-left: 18px; position: relative; font-size: 14px; color: var(--text-secondary); }
+ul.clean li { padding-left: 18px; position: relative; font-size: 16px; color: var(--text-secondary); }
 ul.clean li::before { content: "–"; position: absolute; left: 0; color: var(--text-muted); }
 hr.rule { border: none; border-top: 1px solid var(--border); margin: 26px 0; }
 
