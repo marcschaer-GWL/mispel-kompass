@@ -340,3 +340,39 @@ details.assumptions[open] summary::after { content: "–"; }
 .sources h4 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
 .sources ol { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
 .sources a { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--border-strong); }
+
+/* ============ Datei-Upload (Speichergrößen-Analyse) ============ */
+.upload-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 40px 20px; border: 1.5px dashed var(--border-strong); border-radius: var(--grid);
+  background: var(--surface-hover); cursor: pointer; text-align: center;
+  transition: border-color .15s ease, background .15s ease;
+}
+.upload-drop:hover, .upload-drop.dragover { border-color: var(--gold); background: var(--gold-soft); }
+.upload-drop-icon { font-family: var(--font-mono); font-size: 26px; color: var(--gold); }
+.upload-drop-text { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.upload-status { margin-top: 12px; font-size: 13.5px; color: var(--text-secondary); }
+.upload-status.active { color: var(--green); }
+
+/* ============ Liniendiagramm (Speichergrößen-Analyse) ============ */
+.linechart-wrap { position: relative; }
+#linechart { width: 100%; height: auto; display: block; overflow: visible; }
+.lc-axis-line { stroke: var(--border); stroke-width: 1; }
+.lc-grid-line { stroke: var(--border); stroke-width: 1; opacity: 0.5; }
+.lc-axis-label { font-family: var(--font-mono); font-size: 11px; fill: var(--text-muted); }
+.lc-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.lc-line.mispel { stroke-dasharray: 6,4; }
+.lc-marker-line { stroke-width: 1.5; stroke-dasharray: 3,3; }
+.lc-marker-dot { stroke: var(--bg); stroke-width: 2; }
+.lc-marker-label { font-family: var(--font-body); font-size: 11.5px; font-weight: 700; }
+.lc-crosshair { stroke: var(--border-strong); stroke-width: 1; pointer-events: none; }
+.lc-hit-area { fill: transparent; }
+.lc-tooltip {
+  position: absolute; top: 10px; pointer-events: none;
+  background: var(--surface-hover); color: var(--text-primary); border: 1px solid var(--border-strong);
+  border-radius: 7px; padding: 8px 11px; font-size: 12.5px; white-space: nowrap;
+  transform: translateX(-50%); z-index: 5;
+}
+.lc-tooltip .tt-title { font-weight: 700; margin-bottom: 4px; font-family: var(--font-mono); }
+.lc-tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
+.lc-tooltip .tt-swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; }

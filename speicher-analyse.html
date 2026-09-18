@@ -1,0 +1,326 @@
+<!--
+  Geltende globale Vorgaben (siehe /Users/marcschaer/Qsync/99.Software/CLAUDE.md):
+  - globale vorgaben/Claude-GWL-Brand.md
+  - globale vorgaben/Frontend/Frontend-Vorgaben.md
+  - globale vorgaben/PV-Kalkulation/PV-Kalkulation-Vorgaben.md
+  Projektspezifisch: design/GWL-Design-Guidelines.md, design/Projektvorgaben.md
+-->
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Speichergrößen-Analyse — MiSpeL</title>
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<!-- Kopfzeile: fix & projektübergreifend identisch, siehe Frontend-Vorgaben.md -->
+<header class="site-header">
+  <div class="header-logo"><img src="assets/gwl-logo.svg" alt="GWL-Design Logo"></div>
+  <div class="header-claim">Grid Without Limits</div>
+  <div class="header-login"><a href="#" class="btn-pill">Anmelden</a></div>
+</header>
+<div class="page-title-bar"><h1>Speichergrößen-Analyse</h1></div>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">GWL-Design · Speicher-Dimensionierung aus echten Zählerdaten</div>
+    <p class="lead">Wie groß sollte der Batteriespeicher wirklich sein?</p>
+    <p class="dek">Lädt die tägliche Mieterstrom-„Übersicht.xlsx" eines Gebäudes und simuliert für Speichergrößen von 0 bis 300&nbsp;kWh, wie viel Netzbezug ein Speicher vermeiden würde – als reine PV-Eigenverbrauchslösung und zusätzlich im MiSpeL-Szenario mit Netzladung in günstigen Börsenstunden.</p>
+    <div class="meta-row">
+      <span class="chip"><span class="dot"></span>Tages-Bilanz-Modell</span>
+      <span class="chip status-good"><span class="dot"></span>Bis 300 kWh Speichergröße</span>
+    </div>
+    <p style="margin-top:14px; font-size:13.5px;"><a href="mispel-kompass.html">← Zurück zum MiSpeL-Kompass</a></p>
+    <div class="disclaimer">Die Simulation rechnet auf Tagesbasis (Ertrag/Verbrauch/Netzbezug/Einspeisung je Tag), nicht auf 15-Minuten-Basis – untertägige Lastspitzen werden dadurch nicht erfasst. Für eine erste Einordnung der sinnvollen Speichergröße ist das ausreichend genau, ersetzt aber keine detaillierte Lastgang-Simulation oder ein verbindliches Angebot.</div>
+  </div>
+</header>
+
+<main class="shell">
+
+  <!-- ============ UPLOAD ============ -->
+  <section class="panel" id="p-upload">
+    <div class="section-head">
+      <div class="kicker">01 · Zählerdaten laden</div>
+      <h2>Übersicht.xlsx des Gebäudes hochladen</h2>
+      <p class="lede">Die Datei bleibt im Browser – es wird nichts hochgeladen oder gespeichert. Erwartet werden die Spalten „Tag, Ertrag, Verbrauch, Netzbezug, Einspeisung" (wie im Mieterstrom-Abrechnungsexport), optional „Beladung/Entladung" bei bereits vorhandenem Speicher.</p>
+    </div>
+
+    <div class="card">
+      <label class="upload-drop" id="upload-drop" for="file-input">
+        <span class="upload-drop-icon">↥</span>
+        <span class="upload-drop-text">Übersicht.xlsx auswählen oder hierher ziehen</span>
+        <input type="file" id="file-input" accept=".xlsx" hidden />
+      </label>
+      <p class="upload-status" id="upload-status"></p>
+      <p class="field-warn" id="upload-error" hidden></p>
+    </div>
+  </section>
+
+  <!-- ============ ERGEBNISSE (bis Datei geladen: hidden) ============ -->
+  <div id="results" hidden>
+
+    <hr class="rule" />
+
+    <section class="panel" style="padding-top:0">
+      <div class="section-head">
+        <div class="kicker">02 · Erkannte Anlage</div>
+        <h2 id="anlage-titel">–</h2>
+        <p class="lede" id="anlage-sub"></p>
+      </div>
+
+      <div class="card">
+        <div class="context-strip">
+          <div class="context-item"><span class="k">Jahresverbrauch</span><span class="v mono" id="ctx-verbrauch">–</span></div>
+          <div class="context-item"><span class="k">Jahresertrag (PV)</span><span class="v mono" id="ctx-ertrag">–</span></div>
+          <div class="context-item"><span class="k">Erfasster Zeitraum</span><span class="v mono" id="ctx-zeitraum">–</span></div>
+          <div class="context-item"><span class="k">Vorhandener Speicher erkannt</span><span class="v" id="ctx-speicher-erkannt">–</span></div>
+        </div>
+        <p class="result-note" id="note-hochrechnung" style="margin-top:10px"></p>
+      </div>
+
+      <details class="assumptions" id="assumptions" style="margin-top:16px">
+        <summary>Annahmen anpassen</summary>
+        <div class="assumptions-body">
+          <label class="field">
+            Rundwirkungsgrad Speicher (%)
+            <input type="number" id="in-eta" min="50" max="100" step="1" value="90" />
+            <span class="hint">Verlust durch Laden + Entladen zusammen. Üblich bei Heimspeichern: 90 %.</span>
+          </label>
+          <label class="field">
+            Schwelle „ausreichend groß" (% des Nutzens bei 300 kWh)
+            <input type="number" id="in-schwelle" min="50" max="100" step="1" value="95" />
+            <span class="hint">Empfohlene Größe = kleinste Kapazität, die schon diesen Anteil des bei 300 kWh maximal möglichen Nutzens erreicht.</span>
+          </label>
+          <label class="field">
+            Ersparnis je kWh Eigenverbrauch (ct/kWh)
+            <input type="number" id="in-strompreis" min="0" step="0.5" value="32" />
+            <span class="hint">Meist der Strompreis, den Eigenverbrauch verdrängt.</span>
+          </label>
+          <label class="field">
+            Ladeleistung Netzladung MiSpeL (kW)
+            <input type="number" id="in-leistung" min="0" step="0.5" value="3" />
+            <span class="hint" id="leistung-hint">Maximale Ladeleistung aus dem Netz in günstigen Stunden. Wird nach dem Laden einer Datei automatisch aus der PV-Spitzenleistung vorgeschlagen (Wechselrichter-Schritte 15/20 kW, immer zwei Stück) — frei überschreibbar.</span>
+          </label>
+          <label class="field">
+            Verfügbare günstige Ladestunden pro Jahr
+            <input type="number" id="in-ladestunden" min="0" step="50" value="1460" />
+            <span class="hint">Zeitfenster mit günstigem Börsenpreis, in dem der Speicher realistisch Netzstrom aufnehmen kann (Annahme: ca. 4 Std./Tag).</span>
+          </label>
+        </div>
+        <p class="result-note" id="preis-min-max-info" style="margin-top:10px"></p>
+      </details>
+
+      <div class="card" id="card-tagnacht" style="margin-top:16px">
+        <h3 class="card-title">Tag/Nacht-Aufteilung des Verbrauchs</h3>
+        <p class="card-sub">Die xlsx-Spalten „Netzbezug"/„Einspeisung" sind rechnerisch aus Tagessummen zurückgerechnet (Eigenverbrauch = Ertrag − Einspeisung) und unterschätzen echte Lastverschiebung zwischen Tag und Nacht. Stattdessen wird hier direkt aus Ertrag, Verbrauch und einem geschätzten Nachtanteil rekonstruiert, wie viel PV-Überschuss tagsüber wirklich anfällt und wie viel Energie nachts (ohne PV) gedeckt werden muss.</p>
+        <div style="display:flex; gap:28px; flex-wrap:wrap; margin-top:14px;">
+          <div>
+            <div class="card-sub" style="margin-bottom:6px">Wärmepumpe vorhanden?</div>
+            <div class="yesno" role="group" aria-label="Wärmepumpe vorhanden?">
+              <button type="button" id="wp-ja" aria-pressed="false">Ja</button>
+              <button type="button" id="wp-nein" aria-pressed="true">Nein</button>
+            </div>
+          </div>
+          <div>
+            <div class="card-sub" style="margin-bottom:6px">Klimaanlage vorhanden?</div>
+            <div class="yesno" role="group" aria-label="Klimaanlage vorhanden?">
+              <button type="button" id="klima-ja" aria-pressed="false">Ja</button>
+              <button type="button" id="klima-nein" aria-pressed="true">Nein</button>
+            </div>
+          </div>
+        </div>
+        <label class="field" style="margin-top:18px">
+          Nachtanteil Grundlast (%)
+          <input type="number" id="in-nachtanteil" min="0" max="100" step="1" value="30" />
+          <input type="range" id="in-nachtanteil-slider" min="0" max="100" step="1" value="30" aria-label="Nachtanteil Grundlast (%), Regler" />
+          <span class="hint">Anteil der Grundlast (Basisverbrauch inkl. Wärmepumpe/Warmwasser), der auf die Stunden ohne PV-Ertrag (angenommen 19–07 Uhr) entfällt. Läuft unabhängig von der Klimaanlage weiter. Vorbelegung aus der Wärmepumpe-Auswahl, frei anpassbar.</span>
+        </label>
+        <label class="field" id="klima-nachtanteil-wrap" style="margin-top:18px" hidden>
+          Nachtanteil Klima-Mehrverbrauch (%)
+          <input type="number" id="in-nachtanteil-klima" min="0" max="100" step="1" value="5" />
+          <input type="range" id="in-nachtanteil-klima-slider" min="0" max="100" step="1" value="5" aria-label="Nachtanteil Klima-Mehrverbrauch (%), Regler" />
+          <span class="hint">Nur der Verbrauch, der über die Grundlast hinausgeht (automatisch aus den Tagen mit besonders hohem Verbrauch geschätzt) — Klimaanlagen laufen fast nur tagsüber, daher niedriger Wert.</span>
+        </label>
+      </div>
+    </section>
+
+    <hr class="rule" />
+
+    <section class="panel" style="padding-top:0">
+      <div class="section-head">
+        <div class="kicker">03 · Empfohlene Speichergröße</div>
+        <h2>Zwei Szenarien im Vergleich</h2>
+        <p class="lede">„Klassisch" nutzt den Speicher ausschließlich für PV-Eigenverbrauch. „MiSpeL" nutzt zusätzlich die künftige Netzlademöglichkeit in günstigen Börsenstunden (siehe <a href="mispel-kompass.html">MiSpeL-Kompass</a>) – deshalb lohnt sich dort tendenziell ein größerer Speicher.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card result-card" id="rc-klassisch">
+          <div class="opt-head">
+            <h3 class="card-title">Klassisch — nur PV-Eigenverbrauch</h3>
+            <span class="badge easy">Status quo</span>
+          </div>
+          <p class="card-sub">Empfohlene Speichergröße</p>
+          <div class="result-value" id="rv-klassisch">–<span class="cur">kWh</span></div>
+          <div class="result-note" id="rn-klassisch"></div>
+        </div>
+        <div class="card result-card" id="rc-mispel">
+          <div class="opt-head">
+            <h3 class="card-title">MiSpeL — inkl. Netz-Arbitrage</h3>
+            <span class="badge flex">Mit Netzladung</span>
+          </div>
+          <p class="card-sub">Empfohlene Speichergröße</p>
+          <div class="result-value" id="rv-mispel">–<span class="cur">kWh</span></div>
+          <div class="result-note" id="rn-mispel"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h3 class="card-title">Reale Spotmarktpreise (Option)</h3>
+            <p class="card-sub" style="margin-bottom:0">Day-Ahead-Preise DE-LU, Quelle: <a href="https://www.energy-charts.info/index.html?l=de&c=DE" target="_blank" rel="noopener">energy-charts.info</a>. Zeigt, warum sich das Speichern des Tagesüberschusses lohnt, statt ihn einzuspeisen.</p>
+          </div>
+          <button class="table-toggle-btn" id="btn-spotpreise" aria-expanded="false">Spotmarktpreise anzeigen</button>
+        </div>
+        <div id="spotpreise-body" hidden style="margin-top:16px">
+          <div class="context-strip">
+            <div class="context-item"><span class="k">Ø Preis tagsüber (07–19 Uhr)</span><span class="v mono" id="ctx-preis-tag">–</span></div>
+            <div class="context-item"><span class="k">Ø Preis nachts (19–07 Uhr)</span><span class="v mono" id="ctx-preis-nacht">–</span></div>
+            <div class="context-item"><span class="k">Zeitraum Preisdaten</span><span class="v mono" id="ctx-preis-zeitraum">–</span></div>
+          </div>
+          <p class="result-note" id="spotpreise-hinweis" style="margin-top:12px"></p>
+        </div>
+      </div>
+
+      <div class="card chart-card" style="margin-top:16px">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h3 class="card-title">Jährliche Ersparnis je Speichergröße</h3>
+            <p class="card-sub" style="margin-bottom:0">Geschätzte Ersparnis auf der Stromrechnung – keine Auszahlung. Punkt markiert die jeweils empfohlene Größe.</p>
+          </div>
+          <button class="table-toggle-btn" id="toggle-table" aria-expanded="false">Als Tabelle anzeigen</button>
+        </div>
+
+        <div class="chart-legend" style="margin-top:18px">
+          <span class="legend-item"><svg width="20" height="10" aria-hidden="true"><line x1="0" y1="5" x2="20" y2="5" stroke="var(--chart-pv)" stroke-width="2.5"/></svg>Klassisch (PV-Eigenverbrauch)</span>
+          <span class="legend-item"><svg width="20" height="10" aria-hidden="true"><line x1="0" y1="5" x2="20" y2="5" stroke="var(--chart-market)" stroke-width="2.5" stroke-dasharray="4,3"/></svg>MiSpeL (+ Netz-Arbitrage)</span>
+        </div>
+
+        <div class="linechart-wrap" id="linechart-wrap" style="margin-top:10px">
+          <svg id="linechart" viewBox="0 0 880 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Jährliche Ersparnis nach Speichergröße"></svg>
+          <div class="lc-tooltip" id="lc-tooltip" hidden></div>
+        </div>
+
+        <div id="table-wrap" style="display:none; overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr><th>Speichergröße (kWh)</th><th>Autarkiegrad</th><th>Ersparnis Klassisch (€/Jahr)</th><th>Ersparnis MiSpeL (€/Jahr)</th></tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="callout warn" style="margin-top:20px">
+        <span class="ico">!</span>
+        <div>
+          <strong>Vereinfachte Modellrechnung.</strong> Netzbezug und Einspeisung werden aus Ertrag, Verbrauch und dem geschätzten Nachtanteil rekonstruiert, nicht aus den xlsx-Spalten „Netzbezug"/„Einspeisung" übernommen (diese sind rechnerisch aus Tagessummen abgeleitet und unterschätzen echte Lastverschiebung). Die Tages-Bilanz-Simulation erfasst dennoch keine untertägigen Lastspitzen innerhalb von „Tag" und „Nacht". Der PV-Eigenverbrauchsnutzen und der Netz-Arbitragenutzen werden unabhängig voneinander geschätzt (wie in MiSpeL-Kompass Modul 3), nicht gemeinsam für denselben Speicherzyklus optimiert. Diese Ansicht dient der ersten Einordnung, nicht als verbindliches Angebot.
+        </div>
+      </div>
+    </section>
+
+    <hr class="rule" />
+
+    <section class="panel" style="padding-top:0">
+      <div class="section-head">
+        <div class="kicker">04 · Tagesgenaue Prüfung</div>
+        <h2>An welchen Tagen reicht der Speicher nicht?</h2>
+        <p class="lede">Zeigt für eine frei wählbare Speichergröße jeden Tag, an dem der Speicher leer war und trotzdem Netzstrom bezogen werden musste. Da nur Tageswerte vorliegen, lässt sich die Uhrzeit nicht bestimmen – „leer" heißt: der Speicherstand vor der Entladung reichte nicht für den gesamten Tagesbedarf.</p>
+      </div>
+
+      <div class="card">
+        <label class="field">
+          Zu prüfende Speichergröße (kWh)
+          <input type="number" id="in-testgroesse" min="0" max="300" step="1" value="10" />
+          <input type="range" id="in-testgroesse-slider" min="0" max="300" step="1" value="10" aria-label="Zu prüfende Speichergröße (kWh), Regler" />
+          <span class="hint">Zum Ausprobieren: zeigt für eine frei gewählte Größe die Tage mit Unterdeckung unten. Vorbelegt mit der „Klassisch"-Empfehlung oben, aber unabhängig davon verstellbar — z. B. um zu prüfen, ob auch 300 kWh an denselben Tagen scheitern würden.</span>
+        </label>
+
+        <div class="context-strip">
+          <div class="context-item"><span class="k">Tage mit Rest-Netzbezug</span><span class="v mono" id="ctx-tage-unterdeckung">–</span></div>
+          <div class="context-item"><span class="k">Größte Unterdeckung (1 Tag)</span><span class="v mono" id="ctx-unterdeckung-max">–</span></div>
+          <div class="context-item"><span class="k">Rest-Netzbezug gesamt/Jahr</span><span class="v mono" id="ctx-unterdeckung-summe">–</span></div>
+        </div>
+      </div>
+
+      <div class="card chart-card" style="margin-top:16px">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h3 class="card-title">Energiefluss über das Jahr — Speicher (<span id="flow-size">–</span> kWh)</h3>
+            <p class="card-sub" style="margin-bottom:0">Woher die Energie für Verbrauch und Speicher an jedem Tag kommt: aus der PV-Anlage, aus dem Netz geladen (MiSpeL) oder direkt aus dem Netz bezogen.</p>
+          </div>
+          <div class="yesno" role="group" aria-label="MiSpeL-Netzladung ein-/ausblenden">
+            <button type="button" id="flow-mispel-ja" aria-pressed="true">MiSpeL an</button>
+            <button type="button" id="flow-mispel-nein" aria-pressed="false">MiSpeL aus</button>
+          </div>
+        </div>
+
+        <div class="chart-legend" style="margin-top:18px">
+          <span class="legend-item"><span class="legend-swatch" style="background:var(--chart-pv)"></span>Aus PV (direkt + Speicher)</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:var(--chart-market)"></span>Aus Speicher, günstig vom Netz geladen (MiSpeL)</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:var(--chart-unused)"></span>Direkter Netzbezug</span>
+        </div>
+
+        <div class="linechart-wrap" id="flow-chart-wrap" style="margin-top:10px">
+          <svg id="flow-chart" viewBox="0 0 900 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Energiefluss über das Jahr: PV, Netzladung MiSpeL, direkter Netzbezug"></svg>
+          <div class="lc-tooltip" id="flow-tooltip" hidden></div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="table-toggle-btn" id="toggle-table-flow" aria-expanded="false">Als Tabelle anzeigen</button>
+        </div>
+        <div id="flow-table-wrap" style="display:none; overflow-x:auto; overflow-y:auto; max-height:420px; margin-top:14px;">
+          <table class="data-table">
+            <thead>
+              <tr><th>Datum</th><th>Aus PV</th><th>Aus PV-Speicher</th><th>MiSpeL an (aus Speicher gesamt)</th><th>Direkter Netzbezug</th></tr>
+            </thead>
+            <tbody id="table-body-flow"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card chart-card" style="margin-top:16px">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h3 class="card-title">Tage mit Unterdeckung, größte zuerst</h3>
+            <p class="card-sub" style="margin-bottom:0" id="unterdeckung-sub">–</p>
+          </div>
+          <button class="table-toggle-btn" id="toggle-table-unterdeckung" aria-expanded="false">Als Tabelle anzeigen</button>
+        </div>
+        <div id="unterdeckung-table-wrap" style="display:none; overflow-x:auto; overflow-y:auto; max-height:420px; margin-top:14px;">
+          <table class="data-table">
+            <thead>
+              <tr><th>Datum</th><th>PV-Überschuss verfügbar</th><th>Tagesbedarf (Netzbezug ohne Speicher)</th><th>Aus Speicher gedeckt</th><th>Rest-Netzbezug</th></tr>
+            </thead>
+            <tbody id="table-body-unterdeckung"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+<script src="js/vendor/xlsx.full.min.js"></script>
+<script src="js/preisdaten-de-lu.js"></script>
+<script src="js/speicher-analyse.js"></script>
+<script>
+  if (new URLSearchParams(location.search).has('grid')) document.body.classList.add('dev-grid');
+</script>
+
+</body>
+</html>
