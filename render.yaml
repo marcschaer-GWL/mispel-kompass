@@ -1,0 +1,24 @@
+# Render Blueprint — statische MiSpeL-Seiten (mispel-kompass)
+#
+# Reine statische HTML-Seiten, kein Backend/DB nötig. Vorgabe siehe
+# globale vorgaben/Hosting/Hosting-Vorgaben.md (Render.com, Region Frankfurt).
+#
+# WICHTIG: Nur der Ordner "public/" wird veröffentlicht. Beispieldaten/ enthält
+# echte Kunden-Zählerdaten und liegt bewusst außerhalb von public/ — die
+# Static-Site-Auslieferung von Render kann Dateien außerhalb des
+# staticPublishPath nicht erreichen.
+#
+# Setup (einmalig, in der Render-UI, nicht per CLI ausführbar):
+#   1. Repo ist bereits auf GitHub (privates Repo, marcschaer-GWL/mispel-kompass).
+#   2. render.com → New → Blueprint → Repo "mispel-kompass" auswählen →
+#      Render liest diese Datei automatisch.
+#   3. Name "mispel-kompass" nach dem ersten Deploy nicht mehr ändern
+#      (siehe Hosting-Vorgaben.md Regel 1 — sonst entsteht ein verwaister
+#      Zweit-Service statt einer Umbenennung).
+#   4. Erwartete Live-URL: https://mispel-kompass.onrender.com
+
+services:
+  - type: web
+    name: mispel-kompass
+    runtime: static
+    staticPublishPath: ./public
