@@ -49,6 +49,16 @@
     </div>
 
     <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div class="card-sub" style="margin-bottom:0">Liegt eine Plexlog-Übersicht.xlsx vor?</div>
+        <div class="yesno" role="group" aria-label="Liegt eine Plexlog-Übersicht.xlsx vor?">
+          <button type="button" id="quelle-ja" aria-pressed="true">Ja</button>
+          <button type="button" id="quelle-nein" aria-pressed="false">Nein</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="upload-card" style="margin-top:16px">
       <label class="upload-drop" id="upload-drop" for="file-input">
         <span class="upload-drop-icon">↥</span>
         <span class="upload-drop-text">Übersicht.xlsx auswählen oder hierher ziehen</span>
@@ -57,10 +67,32 @@
       <p class="upload-status" id="upload-status"></p>
       <p class="field-warn" id="upload-error" hidden></p>
     </div>
+
+    <div class="card" id="manual-card" style="margin-top:16px" hidden>
+      <h3 class="card-title">Tageswerte von Hand eingeben</h3>
+      <p class="card-sub">Für jeden erfassten Tag: Datum, PV-Ertrag und Gesamtverbrauch in kWh (z. B. aus Wechselrichter-App oder Stromrechnung abgelesen). Je mehr Tage über möglichst viele verschiedene Monate verteilt eingetragen werden, desto zuverlässiger die Empfehlung.</p>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="manual-table">
+          <thead>
+            <tr><th style="text-align:left">Datum</th><th>Ertrag (kWh)</th><th>Verbrauch (kWh)</th><th></th></tr>
+          </thead>
+          <tbody id="manual-table-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+        <button type="button" class="table-toggle-btn" id="manual-add-row">+ Tag hinzufügen</button>
+        <button type="button" class="table-toggle-btn" id="manual-submit" style="background:var(--gold-soft); border-color:var(--gold-soft-border);">Werte übernehmen</button>
+      </div>
+      <p class="field-warn" id="manual-error" hidden></p>
+    </div>
   </section>
 
   <!-- ============ ERGEBNISSE (bis Datei geladen: hidden) ============ -->
   <div id="results" hidden>
+
+    <div class="no-print" style="display:flex; justify-content:flex-end; margin-top:24px;">
+      <button type="button" class="table-toggle-btn" id="btn-print">Als PDF speichern / Drucken</button>
+    </div>
 
     <hr class="rule" />
 
@@ -79,6 +111,7 @@
           <div class="context-item"><span class="k">Vorhandener Speicher erkannt</span><span class="v" id="ctx-speicher-erkannt">–</span></div>
         </div>
         <p class="result-note" id="note-hochrechnung" style="margin-top:10px"></p>
+        <p class="result-note" id="note-manual-confidence" style="margin-top:10px" hidden></p>
       </div>
 
       <details class="assumptions" id="assumptions" style="margin-top:16px">

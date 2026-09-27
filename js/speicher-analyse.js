@@ -373,6 +373,8 @@
 
   var currentParsed = null; // { anlage, jahr, hasBattery, days } — days: nur Ertrag/Verbrauch
   var simDays = null; // days nach Tag/Nacht-Rekonstruktion (aktuelle Annahmen)
+  var isManualMode = false; // true, wenn currentParsed aus der Handeingabe stammt
+  var manualConfidence = null; // { score, monthsCovered, totalDays, label }
   var pricePre = precomputeSortedPriceDays(window.MISPEL_PREISDATEN);
   var priceDayNight = classifyPriceDayNight(window.MISPEL_PREISDATEN);
   var priceMinMax = computeAvgDailyMinMax(window.MISPEL_PREISDATEN);
@@ -462,6 +464,7 @@
       try {
         var parsed = parseWorkbook(e.target.result);
         currentParsed = parsed;
+        isManualMode = false;
         $uploadStatus.textContent = "Geladen: " + file.name + " (" + parsed.days.length + " Tage)";
         $uploadStatus.classList.add("active");
         renderAll();
@@ -484,6 +487,112 @@
     var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
     if (f) handleFile(f);
   });
+
+  /* ============================================================
+     1c) Handeingabe der Tageswerte (falls kein Plexlog-Export vorliegt)
+     Baut aus frei editierbaren Tabellenzeilen dieselbe { anlage, jahr,
+     hasBattery, days } -Struktur wie parseWorkbook(), damit die restliche
+     Pipeline (buildDayNightSeries, renderAll, …) unverändert weiterläuft.
+     ============================================================ */
+  var $quelleJa = document.getElementById("quelle-ja");
+  var $quelleNein = document.getElementById("quelle-nein");
+  var $uploadCard = document.getElementById("upload-card");
+  var $manualCard = document.getElementById("manual-card");
+  var $manualTableBody = document.getElementById("manual-table-body");
+  var $manualAddRow = document.getElementById("manual-add-row");
+  var $manualSubmit = document.getElementById("manual-submit");
+  var $manualError = document.getElementById("manual-error");
+  var $noteManualConfidence = document.getElementById("note-manual-confidence");
+
+  function addManualRow(dateVal, ertragVal, verbrauchVal) {
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td><input type="date" class="m-date" value="' + (dateVal || "") + '"></td>' +
+      '<td><input type="number" class="m-ertrag" min="0" step="0.1" value="' + (ertragVal != null ? ertragVal : "") + '"></td>' +
+      '<td><input type="number" class="m-verbrauch" min="0" step="0.1" value="' + (verbrauchVal != null ? verbrauchVal : "") + '"></td>' +
+      '<td><button type="button" class="m-remove" aria-label="Zeile entfernen">×</button></td>';
+    tr.querySelector(".m-remove").addEventListener("click", function () { tr.remove(); });
+    $manualTableBody.appendChild(tr);
+  }
+
+  function collectManualDays() {
+    var rows = $manualTableBody.querySelectorAll("tr");
+    var days = [], seen = {};
+    for (var i = 0; i < rows.length; i++) {
+      var dateVal = rows[i].querySelector(".m-date").value;
+      var ertragVal = rows[i].querySelector(".m-ertrag").value;
+      var verbrauchVal = rows[i].querySelector(".m-verbrauch").value;
+      if (!dateVal && !ertragVal && !verbrauchVal) continue; // leere Zeile ignorieren
+      if (!dateVal) throw new Error("Zeile " + (i + 1) + ": Datum fehlt.");
+      var ertrag = parseFloat(ertragVal), verbrauch = parseFloat(verbrauchVal);
+      if (!isFinite(ertrag) || ertrag < 0) throw new Error("Zeile " + (i + 1) + " (" + dateVal + "): Ertrag fehlt oder ungültig.");
+      if (!isFinite(verbrauch) || verbrauch < 0) throw new Error("Zeile " + (i + 1) + " (" + dateVal + "): Verbrauch fehlt oder ungültig.");
+      var parts = dateVal.split("-"); // input[type=date] liefert yyyy-mm-dd
+      var day = { y: parseInt(parts[0], 10), mo: parseInt(parts[1], 10), d: parseInt(parts[2], 10) };
+      var key = dayKey(day);
+      if (seen[key]) throw new Error("Datum " + dayLabel(day) + " ist doppelt erfasst.");
+      seen[key] = true;
+      days.push({ key: key, label: dayLabel(day), ertrag: ertrag, verbrauch: verbrauch });
+    }
+    if (days.length === 0) throw new Error("Mindestens einen Tag mit Datum, Ertrag und Verbrauch eintragen.");
+    days.sort(function (a, b) { return a.key - b.key; });
+    return days;
+  }
+
+  /* Schätzt in Prozent, wie nah eine Handeingabe an eine volle 12-Monats-
+     Auswertung aus echten Plexlog-Daten herankommt — kein echter Vergleich
+     (der fehlt ja gerade), sondern eine Abdeckungs-Faustregel aus zwei
+     Faktoren: Anzahl erfasster Tage (Wurzel-gedämpft, da einzelne zusätzliche
+     Tage ab einer gewissen Menge wenig zusätzliche Sicherheit bringen) und
+     wie viele der 12 Kalendermonate überhaupt vertreten sind (fehlen ganze
+     Jahreszeiten, sinkt der Wert deutlich, da Saisonalität das Ergebnis am
+     stärksten prägt). Deckelung bei 95 %, da eine Handeingabe nie dieselbe
+     Verlässlichkeit wie eine automatisch gemessene 12-Monats-Reihe erreicht. */
+  function computeManualConfidence(days) {
+    var monthSet = {};
+    days.forEach(function (d) {
+      var mo = Math.floor(d.key / 100) % 100;
+      monthSet[mo] = true;
+    });
+    var monthsCovered = Object.keys(monthSet).length;
+    var monatsFaktor = monthsCovered / 12;
+    var tageFaktor = Math.min(1, days.length / 365);
+    var score = Math.round(100 * (0.65 * monatsFaktor + 0.35 * Math.sqrt(tageFaktor)));
+    score = Math.max(1, Math.min(95, score));
+    var label = score < 35 ? "Grobe Schätzung" : (score < 70 ? "Mittlere Genauigkeit" : "Gute Annäherung");
+    return { score: score, monthsCovered: monthsCovered, totalDays: days.length, label: label };
+  }
+
+  $quelleJa.addEventListener("click", function () {
+    setYesNo($quelleJa, $quelleNein, true);
+    $uploadCard.hidden = false;
+    $manualCard.hidden = true;
+  });
+  $quelleNein.addEventListener("click", function () {
+    setYesNo($quelleJa, $quelleNein, false);
+    $uploadCard.hidden = true;
+    $manualCard.hidden = false;
+    if (!$manualTableBody.children.length) addManualRow();
+  });
+
+  $manualAddRow.addEventListener("click", function () { addManualRow(); });
+  $manualSubmit.addEventListener("click", function () {
+    $manualError.hidden = true;
+    try {
+      var days = collectManualDays();
+      manualConfidence = computeManualConfidence(days);
+      isManualMode = true;
+      currentParsed = { anlage: null, jahr: Math.floor(days[days.length - 1].key / 10000), hasBattery: false, days: days };
+      renderAll();
+    } catch (err) {
+      $manualError.textContent = err.message || String(err);
+      $manualError.hidden = false;
+    }
+  });
+
+  /* ---------- Drucken / Als PDF speichern ---------- */
+  var $btnPrint = document.getElementById("btn-print");
+  if ($btnPrint) $btnPrint.addEventListener("click", function () { window.print(); });
 
   [$eta, $schwelle, $strompreis, $ladestunden].forEach(function (el) {
     el.addEventListener("input", function () { if (currentParsed) renderAll(); });
@@ -524,12 +633,30 @@
 
   function renderChart(state) {
     var svg = document.getElementById("linechart");
-    var W = 880, H = 340, padL = 56, padR = 16, padT = 16, padB = 32;
-    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var svgns = "http://www.w3.org/2000/svg";
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    function el(tag, attrs) {
+      var n = document.createElementNS(svgns, tag);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      return n;
+    }
+
+    var W = 880, H = 340, padR = 16, padT = 16, padB = 32;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
     var maxVal = Math.max(state.mispelEur[state.mispelEur.length - 1], state.klassischEur[state.klassischEur.length - 1], 1);
     var maxY = Math.ceil(maxVal * 1.12 / 50) * 50;
     var maxC = state.capacities[state.capacities.length - 1];
+
+    // Breiteste Y-Achsenbeschriftung messen, damit vierstellige Euro-Beträge (mit Tausenderpunkt)
+    // nicht am linken Rand abgeschnitten werden.
+    var probe = el("text", { class: "lc-axis-label" });
+    probe.textContent = fmtEUR.format(maxY) + " €";
+    svg.appendChild(probe);
+    var padL = Math.max(56, Math.ceil(probe.getBBox().width) + 16);
+    svg.removeChild(probe);
+    var innerW = W - padL - padR, innerH = H - padT - padB;
 
     function x(c) { return padL + (c / maxC) * innerW; }
     function y(v) { return padT + innerH - (v / maxY) * innerH; }
@@ -540,16 +667,6 @@
         d += (i === 0 ? "M" : "L") + x(state.capacities[i]).toFixed(1) + "," + y(values[i]).toFixed(1) + " ";
       }
       return d;
-    }
-
-    var svgns = "http://www.w3.org/2000/svg";
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
-
-    function el(tag, attrs) {
-      var n = document.createElementNS(svgns, tag);
-      for (var k in attrs) n.setAttribute(k, attrs[k]);
-      return n;
     }
 
     // Gitterlinien + Y-Achsenbeschriftung
@@ -691,6 +808,15 @@
     $noteHochrechnung.textContent = Math.abs(numDays - 365) > 3
       ? "Hinweis: " + numDays + " Tage erfasst, Jahreswerte oben und unten sind auf 365 Tage hochgerechnet."
       : "";
+
+    if (isManualMode && manualConfidence) {
+      $noteManualConfidence.hidden = false;
+      $noteManualConfidence.innerHTML = "Handeingabe: " + manualConfidence.totalDays + " Tag(e) in " + manualConfidence.monthsCovered +
+        " von 12 Monaten erfasst → geschätzte Genauigkeit ca. <strong>" + manualConfidence.score + " %</strong> (" + manualConfidence.label +
+        ") verglichen mit einer vollen 12-Monats-Auswertung aus Plexlog-Daten. Je mehr Tage über mehr Monate verteilt erfasst werden, desto zuverlässiger die Empfehlung.";
+    } else {
+      $noteManualConfidence.hidden = true;
+    }
 
     // ---- Ergebniskarten ----
     $rvKlassisch.innerHTML = recK.c + '<span class="cur">kWh</span>';
@@ -863,21 +989,29 @@
 
     var svg = document.getElementById("flow-chart");
     while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var W = 900, H = 340, padL = 56, padR = 16, padT = 16, padB = 32;
-    var innerW = W - padL - padR, innerH = H - padT - padB;
-    var n = flows.length;
-    var maxVal = flows.reduce(function (m, f) { return Math.max(m, f.pvGesamt + f.netzGenutzt + f.restNetzbezug); }, 1) * 1.1;
-
-    function x(i) { return padL + (i / Math.max(1, n - 1)) * innerW; }
-    function y(v) { return padT + innerH - (v / maxVal) * innerH; }
-
     var svgns = "http://www.w3.org/2000/svg";
-    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     function el(tag, attrs) {
       var node = document.createElementNS(svgns, tag);
       for (var k in attrs) node.setAttribute(k, attrs[k]);
       return node;
     }
+
+    var W = 900, H = 340, padR = 16, padT = 16, padB = 32;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var n = flows.length;
+    var maxVal = flows.reduce(function (m, f) { return Math.max(m, f.pvGesamt + f.netzGenutzt + f.restNetzbezug); }, 1) * 1.1;
+
+    // Breiteste Y-Achsenbeschriftung messen, damit vierstellige kWh-Werte (mit Tausenderpunkt)
+    // nicht am linken Rand abgeschnitten werden.
+    var probe = el("text", { class: "lc-axis-label" });
+    probe.textContent = fmtKWH.format(maxVal) + " kWh";
+    svg.appendChild(probe);
+    var padL = Math.max(56, Math.ceil(probe.getBBox().width) + 16);
+    svg.removeChild(probe);
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+
+    function x(i) { return padL + (i / Math.max(1, n - 1)) * innerW; }
+    function y(v) { return padT + innerH - (v / maxVal) * innerH; }
 
     var steps = 4;
     for (var s = 0; s <= steps; s++) {

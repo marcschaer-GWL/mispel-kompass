@@ -376,3 +376,31 @@ details.assumptions[open] summary::after { content: "–"; }
 .lc-tooltip .tt-title { font-weight: 700; margin-bottom: 4px; font-family: var(--font-mono); }
 .lc-tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
 .lc-tooltip .tt-swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+/* ============ Manuelle Tageswerte-Tabelle (Speichergrößen-Analyse) ============ */
+#manual-table td { padding: 6px 8px; }
+#manual-table input[type="date"], #manual-table input[type="number"] {
+  font-family: var(--font-mono); font-size: 13px; padding: 6px 8px;
+  border-radius: 6px; border: 1.5px solid var(--border-strong);
+  background: var(--bg); color: var(--text-primary); width: 100%;
+}
+#manual-table input[type="date"]:focus, #manual-table input[type="number"]:focus { border-color: var(--gold); }
+#manual-table .m-remove {
+  background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px 6px;
+}
+#manual-table .m-remove:hover { color: var(--error-text); }
+
+/* ============ Druckansicht (PDF speichern) ============
+   Papierschonendes helles Layout statt dem dunklen Bildschirm-Theme;
+   Bedienelemente (Upload/Umschalter/Tabellen-Toggles) werden ausgeblendet. */
+@media print {
+  body { background: #fff; color: #111; font-size: 12px; }
+  .site-header, .tabnav-wrap, #p-upload, .no-print, .table-toggle-btn { display: none !important; }
+  .page-title-bar { border-bottom-color: #ccc; }
+  .card, .masthead, .panel { background: #fff !important; border-color: #ccc !important; box-shadow: none !important; }
+  .chip, .badge, .callout, .disclaimer { background: #f2f2f2 !important; border-color: #ccc !important; color: #333 !important; }
+  h1, h2, h3, h4, .result-value, .context-item .v, .eyebrow { color: #111 !important; }
+  .lede, .card-sub, .dek, .result-note, a { color: #444 !important; }
+  .card, .chart-card, .result-card { page-break-inside: avoid; }
+  hr.rule { margin: 14px 0; }
+}

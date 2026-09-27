@@ -2,7 +2,7 @@
   "use strict";
 
   /* ---------- Tabs ---------- */
-  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab:not(.tab-external)"));
   var panels = { p1: document.getElementById("p1"), p2: document.getElementById("p2"), p4: document.getElementById("p4") };
   tabs.forEach(function (tab) {
     tab.addEventListener("click", function () {
