@@ -310,6 +310,42 @@
   }
 
   /* ============================================================
+     4b) Dynamische Obergrenze für die Simulation: statt einer festen Grenze
+     (früher 300 kWh) wächst die Kapazität in PLATEAU_STEP_KWH-Schritten,
+     bis der Zusatznutzen (Klassisch + MiSpeL-Arbitrage zusammen) mehrere
+     Schritte in Folge praktisch nichts mehr bringt — passt sich so an
+     jedes Gebäude an statt pauschal überall bis 300 kWh zu rechnen.
+     ============================================================ */
+  var PLATEAU_STEP_KWH = 5;
+  var PLATEAU_FLAT_STEPS = 4;
+  var PLATEAU_SAFETY_MAX_KWH = 2000; // Sicherheitsgrenze, falls die Kurve aus irgendeinem Grund nie abflacht
+
+  function combinedValueAt(days, eta, pricePre, leistungKw, ladestundenVal, strompreisCt, annualFactor, baselineNetzbezugMit, c) {
+    var r = simulateCapacity(days, c, eta);
+    var avoidedNetzbezug = (baselineNetzbezugMit - r.netzbezugMit) * annualFactor;
+    var valK = avoidedNetzbezug * strompreisCt / 100;
+    var arb = arbitrageForCapacity(pricePre, c, leistungKw, ladestundenVal, eta);
+    return valK + arb.volumeKwhYear * arb.rateCt / 100; // MiSpeL-Wert, wächst nie langsamer als der Klassisch-Wert
+  }
+
+  function buildAdaptiveCapacities(days, eta, pricePre, leistungKw, ladestundenVal, strompreisCt, annualFactor) {
+    var baselineNetzbezugMit = simulateCapacity(days, 0, eta).netzbezugMit;
+    var prevValue = 0, flatStreak = 0, c = 0;
+    while (c < PLATEAU_SAFETY_MAX_KWH) {
+      c += PLATEAU_STEP_KWH;
+      var value = combinedValueAt(days, eta, pricePre, leistungKw, ladestundenVal, strompreisCt, annualFactor, baselineNetzbezugMit, c);
+      var delta = value - prevValue;
+      var epsilon = Math.max(1, value * 0.002); // mind. 1 €/Jahr oder 0,2 % Zuwachs je weitere 5 kWh
+      flatStreak = delta < epsilon ? flatStreak + 1 : 0;
+      prevValue = value;
+      if (flatStreak >= PLATEAU_FLAT_STEPS) break;
+    }
+    var capacities = [];
+    for (var cc = 0; cc <= c; cc++) capacities.push(cc);
+    return capacities;
+  }
+
+  /* ============================================================
      5) UI wiring
      ============================================================ */
   var $fileInput = document.getElementById("file-input");
@@ -320,6 +356,8 @@
 
   var $anlageTitel = document.getElementById("anlage-titel");
   var $anlageSub = document.getElementById("anlage-sub");
+  var $printCoverKunde = document.getElementById("print-cover-kunde");
+  var $printCoverMeta = document.getElementById("print-cover-meta");
   var $ctxVerbrauch = document.getElementById("ctx-verbrauch");
   var $ctxErtrag = document.getElementById("ctx-ertrag");
   var $ctxZeitraum = document.getElementById("ctx-zeitraum");
@@ -387,9 +425,6 @@
       "Ø teuerster Preis/Tag: <strong>" + priceMinMax.avgMaxCt.toFixed(1) + " ct/kWh</strong> " +
       "(Day-Ahead DE-LU, " + priceDataPeriodLabel(window.MISPEL_PREISDATEN) + ", Quelle: energy-charts.info)";
   })();
-
-  var CAPACITIES = [];
-  for (var cc = 0; cc <= 300; cc++) CAPACITIES.push(cc);
 
   var $klimaNachtanteilWrap = document.getElementById("klima-nachtanteil-wrap");
   var $nachtanteilKlima = document.getElementById("in-nachtanteil-klima");
@@ -732,6 +767,41 @@
     hit.addEventListener("mouseleave", function () { crosshair.style.display = "none"; $tooltip.hidden = true; });
   }
 
+  function renderSpeicherAngebot(containerId, kombi) {
+    var el = document.getElementById(containerId);
+    if (!kombi || kombi.lines.length === 0) {
+      el.innerHTML = '<p class="result-note">Kein Speicher notwendig (0 kWh empfohlen).</p>';
+      return;
+    }
+    var rows = kombi.lines.map(function (l) {
+      return "<li>" + l.count + "× " + l.name + " — " + fmtEUR.format(l.vkPriceEach) + " €/Stück = " + fmtEUR.format(l.vkLineTotal) + " €</li>";
+    }).join("");
+    el.innerHTML = '<ul class="clean">' + rows + "</ul>" +
+      '<p class="result-note">Erreichte Kapazität: ' + fmtKWH.format(kombi.achievedKWh) + " kWh (Ziel: " + fmtKWH.format(kombi.targetKWh) + " kWh) · Gesamt: <strong>" + fmtEUR.format(kombi.totalVkPrice) + " €</strong></p>";
+  }
+
+  function renderWechselrichterAngebot(kombi) {
+    var el = document.getElementById("angebot-wechselrichter-body");
+    if (!kombi) {
+      el.innerHTML = '<p class="result-note">Keine passende Wechselrichter-Kombination gefunden.</p>';
+      return;
+    }
+    var extra = kombi.extraMontageEur > 0 ? " + " + fmtEUR.format(kombi.extraMontageEur) + " € Zusatzmontage (Parallelschaltung)" : "";
+    el.innerHTML = '<ul class="clean"><li>' + kombi.count + "× " + kombi.name + " — " + fmtEUR.format(kombi.vkPriceEach) + " €/Stück = " +
+      fmtEUR.format(kombi.vkPriceEach * kombi.count) + " €" + extra + "</li></ul>" +
+      '<p class="result-note">Abgedeckte Leistung: ' + kombi.achievedKW + " kW (Ziel: " + fmtKWH.format(kombi.targetKW) + " kW) · Gesamt: <strong>" + fmtEUR.format(kombi.totalVkPrice) + " €</strong></p>";
+  }
+
+  function renderDienstleistungenAngebot(items, summe) {
+    var el = document.getElementById("angebot-dienstleistungen-body");
+    if (!items || items.length === 0) { el.innerHTML = ""; return; }
+    var rows = items.map(function (d) {
+      return "<li>" + d.name + " — " + fmtEUR.format(d.preis) + " €" + (d.preis === 0 ? " (noch einzutragen)" : "") + "</li>";
+    }).join("");
+    el.innerHTML = '<ul class="clean">' + rows + "</ul>" +
+      '<p class="result-note">Gesamt: <strong>' + fmtEUR.format(summe) + " €</strong></p>";
+  }
+
   function renderTable(state) {
     var rows = "";
     [0, 5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 250, 300].forEach(function (c) {
@@ -775,6 +845,7 @@
     var totalVerbrauch = days.reduce(function (s, d) { return s + d.verbrauch; }, 0);
     var totalErtrag = days.reduce(function (s, d) { return s + d.ertrag; }, 0);
 
+    var CAPACITIES = buildAdaptiveCapacities(days, eta, pricePre, leistungKw, ladestundenVal, strompreisCt, annualFactor);
     var klassisch = buildKlassischCurve(days, CAPACITIES, eta);
     var klassischEur = [], mispelEur = [], autarkie = [], einspeisungMitJahr = [];
 
@@ -799,6 +870,9 @@
     // ---- Kontext ----
     $anlageTitel.textContent = currentParsed.anlage ? String(currentParsed.anlage) : "Gebäude";
     $anlageSub.textContent = "Jahr " + (currentParsed.jahr || "–") + " · " + numDays + " erfasste Tage";
+    $printCoverKunde.textContent = $anlageTitel.textContent;
+    $printCoverMeta.textContent = "Bericht erstellt am " + new Date().toLocaleDateString("de-DE") +
+      " · Datengrundlage: " + days[0].label + " – " + days[days.length - 1].label;
     $ctxVerbrauch.textContent = fmtKWH.format(totalVerbrauch * annualFactor) + " kWh/Jahr";
     $ctxErtrag.textContent = fmtKWH.format(totalErtrag * annualFactor) + " kWh/Jahr";
     $ctxZeitraum.textContent = days[0].label + " – " + days[days.length - 1].label;
@@ -826,10 +900,33 @@
     $rnMispel.textContent = "≈ " + fmtEUR.format(mispelEur[CAPACITIES.indexOf(recM.c)]) + " €/Jahr Ersparnis (inkl. Netz-Arbitrage)" +
       (pricePre ? "." : " — reale Preisdaten nicht verfügbar, entspricht dem Klassisch-Szenario.");
 
+    // ---- Angebot (05): Speicher- und Wechselrichter-Kombi aus der Stückliste ----
+    if (window.MispelStueckliste) {
+      var speicherKlassisch = MispelStueckliste.chooseSpeicherKombi(recK.c);
+      var speicherMispel = MispelStueckliste.chooseSpeicherKombi(recM.c);
+      var wechselrichterKombi = MispelStueckliste.chooseWechselrichterKombi(leistungVorschlag.value);
+      var dienstleistungen = MispelStueckliste.getDienstleistungen();
+      var dienstleistungenSumme = dienstleistungen.reduce(function (s, d) { return s + d.preis; }, 0);
+      var wechselrichterSumme = wechselrichterKombi ? wechselrichterKombi.totalVkPrice : 0;
+
+      renderSpeicherAngebot("angebot-speicher-klassisch-body", speicherKlassisch);
+      renderSpeicherAngebot("angebot-speicher-mispel-body", speicherMispel);
+      renderWechselrichterAngebot(wechselrichterKombi);
+      renderDienstleistungenAngebot(dienstleistungen, dienstleistungenSumme);
+
+      document.getElementById("angebot-gesamt-klassisch").innerHTML =
+        fmtEUR.format(speicherKlassisch.totalVkPrice + wechselrichterSumme + dienstleistungenSumme) + '<span class="cur">€</span>';
+      document.getElementById("angebot-gesamt-mispel").innerHTML =
+        fmtEUR.format(speicherMispel.totalVkPrice + wechselrichterSumme + dienstleistungenSumme) + '<span class="cur">€</span>';
+    }
+
     chartState = { capacities: CAPACITIES, klassischEur: klassischEur, mispelEur: mispelEur, autarkie: autarkie, einspeisungMitJahr: einspeisungMitJahr, recK: recK, recM: recM };
     renderChart(chartState);
     renderTable(chartState);
 
+    var maxC = CAPACITIES[CAPACITIES.length - 1];
+    $testgroesse.max = maxC;
+    $testgroesseSlider.max = maxC;
     if (!testgroesseTouched) {
       $testgroesse.value = recK.c;
       $testgroesseSlider.value = recK.c;

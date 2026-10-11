@@ -396,11 +396,36 @@ details.assumptions[open] summary::after { content: "–"; }
 @media print {
   body { background: #fff; color: #111; font-size: 12px; }
   .site-header, .tabnav-wrap, #p-upload, .no-print, .table-toggle-btn { display: none !important; }
-  .page-title-bar { border-bottom-color: #ccc; }
-  .card, .masthead, .panel { background: #fff !important; border-color: #ccc !important; box-shadow: none !important; }
+  .page-title-bar { background: #fff !important; border-bottom-color: #ccc; }
+  .card, .masthead, .panel, details.assumptions { background: #fff !important; border-color: #ccc !important; box-shadow: none !important; }
   .chip, .badge, .callout, .disclaimer { background: #f2f2f2 !important; border-color: #ccc !important; color: #333 !important; }
+  input[type="number"] { background: #fff !important; color: #111 !important; border-color: #ccc !important; }
+  .yesno button { background: #f2f2f2 !important; color: #333 !important; border-color: #ccc !important; }
+  .yesno button[aria-pressed="true"] { color: #92660a !important; }
   h1, h2, h3, h4, .result-value, .context-item .v, .eyebrow { color: #111 !important; }
   .lede, .card-sub, .dek, .result-note, a { color: #444 !important; }
-  .card, .chart-card, .result-card { page-break-inside: avoid; }
+  .card, .chart-card, .result-card, .context-strip, .callout, details.assumptions { page-break-inside: avoid; }
+  h2, h3, .section-head { page-break-after: avoid; }
   hr.rule { margin: 14px 0; }
+
+  /* Deckblatt: nur im Druck sichtbar, Bildschirmansicht blendet es aus (siehe .print-cover unten) */
+  .print-cover { display: block; page-break-after: always; text-align: center; padding-top: 18%; }
+  .print-cover-logo { height: 40px; width: auto; margin: 0 auto 18px; display: block; }
+  .print-cover-claim { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #666; margin-bottom: 60px; }
+  .print-cover-title { font-size: 30px; font-weight: 700; color: #111; margin-bottom: 14px; }
+  .print-cover-customer { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 8px; }
+  .print-cover-meta { font-size: 13px; color: #666; }
+
+  /* Jedes Modul (02/03/04) beginnt auf einer neuen Seite — die erste hr.rule
+     (direkt vor Modul 02) bleibt ohne Umbruch, sie folgt ja schon dem Deckblatt. */
+  #results hr.rule:nth-of-type(n+2) { page-break-before: always; }
+
+  /* Letzte Tabelle (Modul 04, "Tage mit Unterdeckung") immer vollständig ausdrucken,
+     unabhängig vom Auf-/Zugeklappt-Zustand auf dem Bildschirm. */
+  #unterdeckung-table-wrap { display: block !important; max-height: none !important; overflow: visible !important; }
+  .data-table thead { display: table-header-group; }
+  .data-table tr { page-break-inside: avoid; }
 }
+
+/* Deckblatt auf dem Bildschirm ausblenden, nur für den Druck gedacht */
+.print-cover { display: none; }

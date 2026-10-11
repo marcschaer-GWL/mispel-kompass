@@ -2,21 +2,27 @@
 
 Kunden-Erklär- und Rechen-Tool zur MiSpeL-Regelung (Marktintegration von Speichern und
 Ladepunkten). Einzelne, in sich geschlossene Web-Seite ohne Build-Schritt — direkt per
-Doppelklick auf [`mispel-kompass.html`](mispel-kompass.html) im Browser lauffähig.
+Doppelklick auf [`public/mispel-kompass.html`](public/mispel-kompass.html) im Browser lauffähig.
 
 ## Struktur
 
 ```
 MiSpeL/
-├── mispel-kompass.html      Einstiegsdatei: nur Markup, bindet css/ und js/ ein
-├── css/
-│   ├── tokens.css           GWL-Markenfarben & Typografie als CSS-Variablen
-│   └── styles.css           Komponenten- und Layout-Styles (nutzt nur Tokens aus tokens.css)
-├── js/
-│   └── kompass.js           Tab-Umschaltung, Modellrechnung, Rendering (Module 03/04)
-├── assets/
-│   └── fonts/
-│       └── inter-variable-latin.woff2   selbst gehostete Schrift, keine Font-CDN-Requests
+├── public/                  Wird bei Render veröffentlicht (render.yaml, staticPublishPath)
+│   ├── mispel-kompass.html  Einstiegsdatei: nur Markup, bindet css/ und js/ ein
+│   ├── speicher-analyse.html
+│   ├── index.html           Redirect auf mispel-kompass.html
+│   ├── css/
+│   │   ├── tokens.css       GWL-Markenfarben & Typografie als CSS-Variablen
+│   │   └── styles.css       Komponenten- und Layout-Styles (nutzt nur Tokens aus tokens.css)
+│   ├── js/
+│   │   └── kompass.js       Tab-Umschaltung, Modellrechnung, Rendering (Module 03/04)
+│   └── assets/
+│       └── fonts/
+│           └── inter-variable-latin.woff2   selbst gehostete Schrift, keine Font-CDN-Requests
+├── Beispieldaten/           NICHT öffentlich — echte Kunden-Zählerdaten, bewusst außerhalb
+│                            von public/, wird nie deployed
+├── render.yaml              Render-Blueprint, veröffentlicht nur public/
 └── design/
     ├── GWL-Design-Guidelines.md         Zusammenfassung der Vorgaben + Mapping-Entscheidungen
     ├── GWL_Design_Frontend_Guidelines.pdf

@@ -28,10 +28,10 @@
   <div class="masthead-inner">
     <div class="eyebrow">GWL-Design · Speicher-Dimensionierung aus echten Zählerdaten</div>
     <p class="lead">Wie groß sollte der Batteriespeicher wirklich sein?</p>
-    <p class="dek">Lädt die tägliche Mieterstrom-„Übersicht.xlsx" eines Gebäudes und simuliert für Speichergrößen von 0 bis 300&nbsp;kWh, wie viel Netzbezug ein Speicher vermeiden würde – als reine PV-Eigenverbrauchslösung und zusätzlich im MiSpeL-Szenario mit Netzladung in günstigen Börsenstunden.</p>
+    <p class="dek">Lädt die tägliche Mieterstrom-„Übersicht.xlsx" eines Gebäudes und simuliert für steigende Speichergrößen, bis der Zusatznutzen abflacht, wie viel Netzbezug ein Speicher vermeiden würde – als reine PV-Eigenverbrauchslösung und zusätzlich im MiSpeL-Szenario mit Netzladung in günstigen Börsenstunden.</p>
     <div class="meta-row">
       <span class="chip"><span class="dot"></span>Tages-Bilanz-Modell</span>
-      <span class="chip status-good"><span class="dot"></span>Bis 300 kWh Speichergröße</span>
+      <span class="chip status-good"><span class="dot"></span>Obergrenze automatisch je Gebäude ermittelt</span>
     </div>
     <p style="margin-top:14px; font-size:13.5px;"><a href="mispel-kompass.html">← Zurück zum MiSpeL-Kompass</a></p>
     <div class="disclaimer">Die Simulation rechnet auf Tagesbasis (Ertrag/Verbrauch/Netzbezug/Einspeisung je Tag), nicht auf 15-Minuten-Basis – untertägige Lastspitzen werden dadurch nicht erfasst. Für eine erste Einordnung der sinnvollen Speichergröße ist das ausreichend genau, ersetzt aber keine detaillierte Lastgang-Simulation oder ein verbindliches Angebot.</div>
@@ -90,6 +90,15 @@
   <!-- ============ ERGEBNISSE (bis Datei geladen: hidden) ============ -->
   <div id="results" hidden>
 
+    <!-- Nur im Druck sichtbar: Deckblatt mit Kundenbezug, siehe css/styles.css @media print -->
+    <div class="print-cover">
+      <img src="assets/gwl-logo.svg" alt="GWL-Design" class="print-cover-logo">
+      <div class="print-cover-claim">Grid Without Limits</div>
+      <div class="print-cover-title">Speichergrößen-Analyse</div>
+      <div class="print-cover-customer" id="print-cover-kunde">–</div>
+      <div class="print-cover-meta" id="print-cover-meta">–</div>
+    </div>
+
     <div class="no-print" style="display:flex; justify-content:flex-end; margin-top:24px;">
       <button type="button" class="table-toggle-btn" id="btn-print">Als PDF speichern / Drucken</button>
     </div>
@@ -123,9 +132,9 @@
             <span class="hint">Verlust durch Laden + Entladen zusammen. Üblich bei Heimspeichern: 90 %.</span>
           </label>
           <label class="field">
-            Schwelle „ausreichend groß" (% des Nutzens bei 300 kWh)
+            Schwelle „ausreichend groß" (% des maximal möglichen Nutzens)
             <input type="number" id="in-schwelle" min="50" max="100" step="1" value="95" />
-            <span class="hint">Empfohlene Größe = kleinste Kapazität, die schon diesen Anteil des bei 300 kWh maximal möglichen Nutzens erreicht.</span>
+            <span class="hint">Empfohlene Größe = kleinste Kapazität, die schon diesen Anteil des bei der größten simulierten Kapazität maximal möglichen Nutzens erreicht.</span>
           </label>
           <label class="field">
             Ersparnis je kWh Eigenverbrauch (ct/kWh)
@@ -279,7 +288,7 @@
           Zu prüfende Speichergröße (kWh)
           <input type="number" id="in-testgroesse" min="0" max="300" step="1" value="10" />
           <input type="range" id="in-testgroesse-slider" min="0" max="300" step="1" value="10" aria-label="Zu prüfende Speichergröße (kWh), Regler" />
-          <span class="hint">Zum Ausprobieren: zeigt für eine frei gewählte Größe die Tage mit Unterdeckung unten. Vorbelegt mit der „Klassisch"-Empfehlung oben, aber unabhängig davon verstellbar — z. B. um zu prüfen, ob auch 300 kWh an denselben Tagen scheitern würden.</span>
+          <span class="hint">Zum Ausprobieren: zeigt für eine frei gewählte Größe die Tage mit Unterdeckung unten. Vorbelegt mit der „Klassisch"-Empfehlung oben, aber unabhängig davon verstellbar — z. B. um zu prüfen, ob auch die größte simulierte Größe an denselben Tagen scheitern würde.</span>
         </label>
 
         <div class="context-strip">
@@ -344,12 +353,72 @@
       </div>
     </section>
 
+    <hr class="rule" />
+
+    <section class="panel" style="padding-top:0">
+      <div class="section-head">
+        <div class="kicker">05 · Angebot</div>
+        <h2>Speicher &amp; Wechselrichter — Vorschlag mit Preis</h2>
+        <p class="lede">Automatisch die günstigste Modell-Kombination aus der Komponenten-Stückliste (<code>js/stueckliste.js</code>) für die oben empfohlene Speichergröße bzw. PV-Spitzenleistung.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card result-card">
+          <div class="opt-head">
+            <h3 class="card-title">Speicher — Klassisch</h3>
+            <span class="badge easy">Status quo</span>
+          </div>
+          <div id="angebot-speicher-klassisch-body"></div>
+        </div>
+        <div class="card result-card">
+          <div class="opt-head">
+            <h3 class="card-title">Speicher — MiSpeL</h3>
+            <span class="badge flex">Mit Netzladung</span>
+          </div>
+          <div id="angebot-speicher-mispel-body"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3 class="card-title">Wechselrichter</h3>
+        <div id="angebot-wechselrichter-body"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3 class="card-title">Dienstleistungen</h3>
+        <div id="angebot-dienstleistungen-body"></div>
+      </div>
+
+      <div class="grid-2" style="margin-top:16px">
+        <div class="card result-card">
+          <div class="opt-head">
+            <h3 class="card-title">Gesamt — Klassisch</h3>
+            <span class="badge easy">Status quo</span>
+          </div>
+          <div class="result-value" id="angebot-gesamt-klassisch">–<span class="cur">€</span></div>
+        </div>
+        <div class="card result-card">
+          <div class="opt-head">
+            <h3 class="card-title">Gesamt — MiSpeL</h3>
+            <span class="badge flex">Mit Netzladung</span>
+          </div>
+          <div class="result-value" id="angebot-gesamt-mispel">–<span class="cur">€</span></div>
+        </div>
+      </div>
+
+      <div class="callout warn" style="margin-top:20px">
+        <span class="ico">!</span>
+        <div><strong>Richtpreise, kein verbindliches Angebot.</strong> Preise aus der Komponenten-Stückliste, netto, zzgl. Montage, Kabel und Zubehör. Vor einem verbindlichen Angebot Verfügbarkeit und aktuelle Einkaufspreise prüfen.</div>
+      </div>
+    </section>
+
   </div>
 
 </main>
 
 <script src="js/vendor/xlsx.full.min.js"></script>
 <script src="js/preisdaten-de-lu.js"></script>
+<script src="js/stueckliste.js"></script>
 <script src="js/speicher-analyse.js"></script>
 <script>
   if (new URLSearchParams(location.search).has('grid')) document.body.classList.add('dev-grid');
