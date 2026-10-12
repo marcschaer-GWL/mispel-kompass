@@ -297,11 +297,33 @@
   }
 
   /* ============================================================
-     4) Empfehlung: kleinste Kapazität, die schon "Schwelle" % des bei
-     der größten simulierten Kapazität erreichbaren Nutzens liefert.
+     4) Empfehlung: kleinste Kapazität, die schon "Schwelle" % des Nutzens
+     liefert, bei dem die jeweilige Kurve (Klassisch bzw. MiSpeL) selbst
+     abflacht. Wichtig: NICHT der Wert am Ende der simulierten Spanne —
+     die Simulationsgrenze wird separat (siehe 4b) nach dem Kombi-Wert aus
+     Klassisch + Arbitrage bestimmt und kann daher viel weiter reichen als
+     der Punkt, an dem eine einzelne Kurve bereits flach ist. Jede Kurve
+     bekommt so ihre eigene, passende Referenz statt eine gemeinsame.
      ============================================================ */
+  function findPlateauValue(curve) {
+    if (curve.length === 0) return 0;
+    // Schwelle "flach genug" fix aus dem tatsächlichen Endwert dieser Kurve berechnen
+    // (nicht aus dem jeweils aktuellen, am Anfang noch kleinen Wert) — sonst wird die
+    // Kurve schon nach den ersten Schritten fälschlich als abgeflacht erkannt.
+    var epsilon = Math.max(1, curve[curve.length - 1].value * 0.002);
+    var prevValue = curve[0].value, flatStreak = 0;
+    for (var i = PLATEAU_STEP_KWH; i < curve.length; i += PLATEAU_STEP_KWH) {
+      var value = curve[i].value;
+      var delta = value - prevValue;
+      flatStreak = delta < epsilon ? flatStreak + 1 : 0;
+      prevValue = value;
+      if (flatStreak >= PLATEAU_FLAT_STEPS) return value;
+    }
+    return curve[curve.length - 1].value;
+  }
+
   function findRecommended(curve, thresholdFrac) {
-    var maxVal = curve[curve.length - 1].value;
+    var maxVal = findPlateauValue(curve);
     if (maxVal <= 0) return curve[0];
     for (var i = 0; i < curve.length; i++) {
       if (curve[i].value >= thresholdFrac * maxVal) return curve[i];
@@ -354,6 +376,13 @@
   var $uploadError = document.getElementById("upload-error");
   var $results = document.getElementById("results");
 
+  var $apiUrl = document.getElementById("in-api-url");
+  var $apiAuth = document.getElementById("in-api-auth");
+  var $apiLaden = document.getElementById("api-laden");
+  var $apiStatus = document.getElementById("api-status");
+  var $apiError = document.getElementById("api-error");
+  var $apiRaw = document.getElementById("api-raw");
+
   var $anlageTitel = document.getElementById("anlage-titel");
   var $anlageSub = document.getElementById("anlage-sub");
   var $printCoverKunde = document.getElementById("print-cover-kunde");
@@ -368,6 +397,7 @@
   var $schwelle = document.getElementById("in-schwelle");
   var $strompreis = document.getElementById("in-strompreis");
   var $leistung = document.getElementById("in-leistung");
+  var $speicherLeistung = document.getElementById("in-speicher-leistung");
   var $ladestunden = document.getElementById("in-ladestunden");
 
   var $rvKlassisch = document.getElementById("rv-klassisch");
@@ -398,6 +428,9 @@
 
   var $wpJa = document.getElementById("wp-ja"), $wpNein = document.getElementById("wp-nein");
   var $klimaJa = document.getElementById("klima-ja"), $klimaNein = document.getElementById("klima-nein");
+  var $sommerJa = document.getElementById("sommer-ja"), $sommerNein = document.getElementById("sommer-nein");
+  var $sommerHinweis = document.getElementById("sommer-hinweis");
+  var $vorhanden = document.getElementById("in-vorhanden");
   var $nachtanteil = document.getElementById("in-nachtanteil");
   var $nachtanteilSlider = document.getElementById("in-nachtanteil-slider");
   var nachtanteilTouched = false;
@@ -434,8 +467,12 @@
     // Klima verändert den Basis-Nachtanteil (Grundlast/Wärmepumpe) nicht mehr —
     // die läuft unabhängig davon weiter. Nur Wärmepumpe bestimmt die Basis.
     if (nachtanteilTouched) return;
-    var wp = $wpJa.getAttribute("aria-pressed") === "true";
-    var v = wp ? 42 : 30;
+    // Aus realen Plexlog-Tagesverläufen mehrerer Gebäude (19-07 Uhr als Nachtfenster)
+    // lag der tatsächliche Nachtanteil bei Wohngebäuden im Schnitt bei ~43 % (33-53 %,
+    // je nach Wallbox/Wärmepumpe-Kombination) — deutlich über dem alten 30 %-Standard.
+    // Wärmepumpe läuft dabei nicht spürbar nachtlastiger als ohne, daher weiterhin
+    // derselbe Wert für beide Fälle.
+    var v = 40;
     $nachtanteil.value = v;
     $nachtanteilSlider.value = v;
   }
@@ -452,6 +489,9 @@
   $klimaJa.addEventListener("click", function () { setYesNo($klimaJa, $klimaNein, true); updateKlimaFieldVisibility(); if (currentParsed) renderAll(); });
   $klimaNein.addEventListener("click", function () { setYesNo($klimaJa, $klimaNein, false); updateKlimaFieldVisibility(); if (currentParsed) renderAll(); });
   updateKlimaFieldVisibility();
+
+  $sommerJa.addEventListener("click", function () { setYesNo($sommerJa, $sommerNein, true); if (currentParsed) renderAll(); });
+  $sommerNein.addEventListener("click", function () { setYesNo($sommerJa, $sommerNein, false); if (currentParsed) renderAll(); });
 
   $nachtanteilSlider.addEventListener("input", function () {
     nachtanteilTouched = true;
@@ -510,6 +550,40 @@
     reader.onerror = function () { showError("Datei konnte nicht gelesen werden."); };
     reader.readAsArrayBuffer(file);
   }
+
+  /* ---------- Plexlog-API: nur Testabruf, Format noch unbekannt ----------
+     URL/Schlüssel bleiben im localStorage dieses Browsers — gehen nirgendwo
+     anders hin als direkt an die Plexlog-API selbst. Sobald das Antwort-
+     Format bekannt ist, wird hier noch die Umwandlung in das interne
+     Tag-Format (wie parseWorkbook) ergänzt. */
+  (function initApiFields() {
+    $apiUrl.value = localStorage.getItem("mispel_api_url") || "";
+    $apiAuth.value = localStorage.getItem("mispel_api_auth") || "";
+  })();
+  $apiUrl.addEventListener("input", function () { localStorage.setItem("mispel_api_url", $apiUrl.value); });
+  $apiAuth.addEventListener("input", function () { localStorage.setItem("mispel_api_auth", $apiAuth.value); });
+
+  $apiLaden.addEventListener("click", function () {
+    $apiError.hidden = true;
+    $apiRaw.textContent = "";
+    if (!$apiUrl.value) { $apiError.textContent = "Bitte zuerst die API-Endpunkt-URL eintragen."; $apiError.hidden = false; return; }
+    $apiStatus.textContent = "Lade von " + $apiUrl.value + " …";
+    var headers = {};
+    if ($apiAuth.value) headers["Authorization"] = $apiAuth.value;
+    fetch($apiUrl.value, { headers: headers })
+      .then(function (res) {
+        $apiStatus.textContent = "Antwort: HTTP " + res.status;
+        return res.text();
+      })
+      .then(function (text) {
+        $apiRaw.textContent = text;
+      })
+      .catch(function (err) {
+        $apiStatus.textContent = "";
+        $apiError.textContent = "Abruf fehlgeschlagen: " + (err.message || String(err));
+        $apiError.hidden = false;
+      });
+  });
 
   $fileInput.addEventListener("change", function () { handleFile($fileInput.files[0]); });
   ["dragover"].forEach(function (evt) {
@@ -629,7 +703,7 @@
   var $btnPrint = document.getElementById("btn-print");
   if ($btnPrint) $btnPrint.addEventListener("click", function () { window.print(); });
 
-  [$eta, $schwelle, $strompreis, $ladestunden].forEach(function (el) {
+  [$eta, $schwelle, $strompreis, $speicherLeistung, $ladestunden, $vorhanden].forEach(function (el) {
     el.addEventListener("input", function () { if (currentParsed) renderAll(); });
   });
 
@@ -738,6 +812,14 @@
     marker(state.recK, state.klassischEur, "var(--chart-pv)", "Klassisch", 14);
     marker(state.recM, state.mispelEur, "var(--chart-market)", "MiSpeL", 30);
 
+    if (state.vorhandenesVolumen > 0 && state.vorhandenesVolumen <= maxC) {
+      var vx = x(state.vorhandenesVolumen);
+      svg.appendChild(el("line", { x1: vx, x2: vx, y1: padT, y2: padT + innerH, class: "lc-marker-line", stroke: "var(--text-muted)", "stroke-dasharray": "3,3" }));
+      var vlab = el("text", { x: vx, y: padT + innerH + 34, class: "lc-axis-label", "text-anchor": "middle" });
+      vlab.textContent = "Vorhanden: " + state.vorhandenesVolumen + " kWh";
+      svg.appendChild(vlab);
+    }
+
     // Crosshair + Tooltip (Hover)
     var hit = el("rect", { x: padL, y: padT, width: innerW, height: innerH, class: "lc-hit-area" });
     var crosshair = el("line", { x1: 0, x2: 0, y1: padT, y2: padT + innerH, class: "lc-crosshair" });
@@ -823,10 +905,21 @@
   /* ---------- Hauptberechnung ---------- */
   function renderAll() {
     if (!currentParsed) return;
+    var sommerActive = $sommerJa.getAttribute("aria-pressed") === "true";
+    var rawDaysForModel = currentParsed.days;
+    if (sommerActive) {
+      var sommerTage = currentParsed.days.filter(function (d) {
+        var monat = Math.floor((d.key % 10000) / 100);
+        return monat >= 5 && monat <= 9;
+      });
+      if (sommerTage.length > 0) rawDaysForModel = sommerTage;
+      else sommerActive = false; // keine Mai-Sept-Daten im Datensatz -> normale Jahresrechnung
+    }
+    $sommerHinweis.hidden = !sommerActive;
     var nachtanteilFrac = num($nachtanteil, 30) / 100;
     var klimaActive = $klimaJa.getAttribute("aria-pressed") === "true";
     var nachtanteilKlimaFrac = num($nachtanteilKlima, 5) / 100;
-    var days = buildDayNightSeries(currentParsed.days, nachtanteilFrac, klimaActive, nachtanteilKlimaFrac);
+    var days = buildDayNightSeries(rawDaysForModel, nachtanteilFrac, klimaActive, nachtanteilKlimaFrac);
     simDays = days;
     var eta = num($eta, 90) / 100;
     var thresholdFrac = num($schwelle, 95) / 100;
@@ -838,21 +931,32 @@
       "Vorschlag aus PV-Spitzenleistung: höchster Tagesertrag ÷ 5 Volllaststunden ≈ " + leistungVorschlag.peakKw.toFixed(1) +
       " kW → " + leistungVorschlag.n + "× " + leistungVorschlag.step + "-kW-Wechselrichter = " + leistungVorschlag.value + " kW. Frei überschreibbar.";
     var leistungKw = num($leistung, 3);
+    var speicherLeistungKw = num($speicherLeistung, 5);
+    // Lade-/Entladeleistung für die MiSpeL-Netzladung: begrenzt durch das Speicher-Datenblatt
+    // UND durch den Wechselrichter, der nicht über Stunden auf 100 % Last laufen soll (-20 %).
+    var effektiveLeistungKw = Math.min(speicherLeistungKw, leistungKw * 0.8);
+    document.getElementById("speicher-leistung-hint").textContent =
+      "Technisches Limit des Speichers selbst (laut Datenblatt). Für die Berechnung genutzt: " +
+      effektiveLeistungKw.toFixed(1) + " kW (Minimum aus Speicherlimit und 80 % der Wechselrichterleistung).";
     var ladestundenVal = num($ladestunden, 1460);
 
     var numDays = days.length;
-    var annualFactor = numDays > 0 ? 365 / numDays : 1;
+    // Im Sommer-Modus nicht aufs ganze Jahr hochrechnen -- die Zahlen gelten dann
+    // nur für den tatsächlichen Mai-Sept-Zeitraum im Datensatz.
+    var annualFactor = sommerActive ? 1 : (numDays > 0 ? 365 / numDays : 1);
+    var zeitraumLabel = sommerActive ? " kWh (Mai–Sept.)" : " kWh/Jahr";
+    var ersparnisLabel = sommerActive ? " € Ersparnis im Zeitraum Mai–Sept." : " €/Jahr Ersparnis";
     var totalVerbrauch = days.reduce(function (s, d) { return s + d.verbrauch; }, 0);
     var totalErtrag = days.reduce(function (s, d) { return s + d.ertrag; }, 0);
 
-    var CAPACITIES = buildAdaptiveCapacities(days, eta, pricePre, leistungKw, ladestundenVal, strompreisCt, annualFactor);
+    var CAPACITIES = buildAdaptiveCapacities(days, eta, pricePre, effektiveLeistungKw, ladestundenVal, strompreisCt, annualFactor);
     var klassisch = buildKlassischCurve(days, CAPACITIES, eta);
     var klassischEur = [], mispelEur = [], autarkie = [], einspeisungMitJahr = [];
 
     klassisch.forEach(function (r) {
       var avoidedNetzbezug = (klassisch[0].netzbezugMit - r.netzbezugMit) * annualFactor;
       var valK = avoidedNetzbezug * strompreisCt / 100;
-      var arb = arbitrageForCapacity(pricePre, r.c, leistungKw, ladestundenVal, eta);
+      var arb = arbitrageForCapacity(pricePre, r.c, effektiveLeistungKw, ladestundenVal, eta);
       var valArb = arb.volumeKwhYear * arb.rateCt / 100;
       klassischEur.push(valK);
       mispelEur.push(valK + valArb);
@@ -873,15 +977,19 @@
     $printCoverKunde.textContent = $anlageTitel.textContent;
     $printCoverMeta.textContent = "Bericht erstellt am " + new Date().toLocaleDateString("de-DE") +
       " · Datengrundlage: " + days[0].label + " – " + days[days.length - 1].label;
-    $ctxVerbrauch.textContent = fmtKWH.format(totalVerbrauch * annualFactor) + " kWh/Jahr";
-    $ctxErtrag.textContent = fmtKWH.format(totalErtrag * annualFactor) + " kWh/Jahr";
+    document.getElementById("ctx-verbrauch-label").textContent = sommerActive ? "Verbrauch Mai–Sept." : "Jahresverbrauch";
+    document.getElementById("ctx-ertrag-label").textContent = sommerActive ? "Ertrag Mai–Sept. (PV)" : "Jahresertrag (PV)";
+    $ctxVerbrauch.textContent = fmtKWH.format(totalVerbrauch * annualFactor) + zeitraumLabel;
+    $ctxErtrag.textContent = fmtKWH.format(totalErtrag * annualFactor) + zeitraumLabel;
     $ctxZeitraum.textContent = days[0].label + " – " + days[days.length - 1].label;
     $ctxSpeicherErkannt.innerHTML = currentParsed.hasBattery
       ? '<span class="chip status-warn" style="padding:2px 8px;">ja – Spalten unbenutzt, Modell rechnet ab 0 kWh</span>'
       : '<span class="chip status-good" style="padding:2px 8px;">nein</span>';
-    $noteHochrechnung.textContent = Math.abs(numDays - 365) > 3
-      ? "Hinweis: " + numDays + " Tage erfasst, Jahreswerte oben und unten sind auf 365 Tage hochgerechnet."
-      : "";
+    $noteHochrechnung.textContent = sommerActive
+      ? "Sommer-Modus: " + numDays + " Tage im Zeitraum Mai–Sept. erfasst, keine Hochrechnung aufs Jahr."
+      : (Math.abs(numDays - 365) > 3
+        ? "Hinweis: " + numDays + " Tage erfasst, Jahreswerte oben und unten sind auf 365 Tage hochgerechnet."
+        : "");
 
     if (isManualMode && manualConfidence) {
       $noteManualConfidence.hidden = false;
@@ -893,17 +1001,26 @@
     }
 
     // ---- Ergebniskarten ----
+    var vorhandenesVolumen = num($vorhanden, 0);
+    var zusatzK = Math.max(0, recK.c - vorhandenesVolumen);
+    var zusatzM = Math.max(0, recM.c - vorhandenesVolumen);
+    var zusatzHinweis = vorhandenesVolumen > 0
+      ? function (zusatz) { return " Vorhanden: " + vorhandenesVolumen + " kWh → zusätzlich sinnvoll: " + zusatz + " kWh."; }
+      : function () { return ""; };
+
     $rvKlassisch.innerHTML = recK.c + '<span class="cur">kWh</span>';
-    $rnKlassisch.textContent = "≈ " + fmtEUR.format(klassischEur[CAPACITIES.indexOf(recK.c)]) + " €/Jahr Ersparnis, Autarkiegrad ≈ " + fmtPct.format(autarkie[CAPACITIES.indexOf(recK.c)] * 100) + " %.";
+    $rnKlassisch.textContent = "≈ " + fmtEUR.format(klassischEur[CAPACITIES.indexOf(recK.c)]) + ersparnisLabel + ", Autarkiegrad ≈ " + fmtPct.format(autarkie[CAPACITIES.indexOf(recK.c)] * 100) + " %." + zusatzHinweis(zusatzK);
 
     $rvMispel.innerHTML = recM.c + '<span class="cur">kWh</span>';
-    $rnMispel.textContent = "≈ " + fmtEUR.format(mispelEur[CAPACITIES.indexOf(recM.c)]) + " €/Jahr Ersparnis (inkl. Netz-Arbitrage)" +
-      (pricePre ? "." : " — reale Preisdaten nicht verfügbar, entspricht dem Klassisch-Szenario.");
+    $rnMispel.textContent = "≈ " + fmtEUR.format(mispelEur[CAPACITIES.indexOf(recM.c)]) + ersparnisLabel + " (inkl. Netz-Arbitrage)" +
+      (pricePre ? "." : " — reale Preisdaten nicht verfügbar, entspricht dem Klassisch-Szenario.") + zusatzHinweis(zusatzM);
 
     // ---- Angebot (05): Speicher- und Wechselrichter-Kombi aus der Stückliste ----
+    // Nutzt die zusätzlich nötige Größe (Empfehlung minus vorhandenes Volumen), da ein
+    // schon vorhandener Speicher nicht nochmal mitbestellt werden muss.
     if (window.MispelStueckliste) {
-      var speicherKlassisch = MispelStueckliste.chooseSpeicherKombi(recK.c);
-      var speicherMispel = MispelStueckliste.chooseSpeicherKombi(recM.c);
+      var speicherKlassisch = MispelStueckliste.chooseSpeicherKombi(zusatzK);
+      var speicherMispel = MispelStueckliste.chooseSpeicherKombi(zusatzM);
       var wechselrichterKombi = MispelStueckliste.chooseWechselrichterKombi(leistungVorschlag.value);
       var dienstleistungen = MispelStueckliste.getDienstleistungen();
       var dienstleistungenSumme = dienstleistungen.reduce(function (s, d) { return s + d.preis; }, 0);
@@ -920,7 +1037,8 @@
         fmtEUR.format(speicherMispel.totalVkPrice + wechselrichterSumme + dienstleistungenSumme) + '<span class="cur">€</span>';
     }
 
-    chartState = { capacities: CAPACITIES, klassischEur: klassischEur, mispelEur: mispelEur, autarkie: autarkie, einspeisungMitJahr: einspeisungMitJahr, recK: recK, recM: recM };
+    chartState = { capacities: CAPACITIES, klassischEur: klassischEur, mispelEur: mispelEur, autarkie: autarkie, einspeisungMitJahr: einspeisungMitJahr, recK: recK, recM: recM, vorhandenesVolumen: vorhandenesVolumen };
+    document.getElementById("chart-titel").textContent = sommerActive ? "Ersparnis Mai–Sept. je Speichergröße" : "Jährliche Ersparnis je Speichergröße";
     renderChart(chartState);
     renderTable(chartState);
 
@@ -932,7 +1050,7 @@
       $testgroesseSlider.value = recK.c;
     }
     renderUnterdeckung();
-    flowCtx = { days: days, eta: eta, leistungKw: leistungKw, ladestundenVal: ladestundenVal, capacityKwh: recM.c };
+    flowCtx = { days: days, eta: eta, leistungKw: effektiveLeistungKw, ladestundenVal: ladestundenVal, capacityKwh: recM.c };
     renderFlowChart();
     if (!$spotpreiseBody.hidden) renderSpotpreise();
 

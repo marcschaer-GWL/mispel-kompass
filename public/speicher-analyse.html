@@ -58,6 +58,14 @@
       </div>
     </div>
 
+    <div class="card" id="leistung-card" style="margin-top:16px">
+      <label class="field">
+        Wechselrichterleistung (kW)
+        <input type="number" id="in-leistung" min="0" step="0.5" value="3" />
+        <span class="hint" id="leistung-hint">Wird nach dem Laden einer Datei automatisch aus der PV-Spitzenleistung vorgeschlagen (Wechselrichter-Schritte 15/20 kW, immer zwei Stück) — frei überschreibbar.</span>
+      </label>
+    </div>
+
     <div class="card" id="upload-card" style="margin-top:16px">
       <label class="upload-drop" id="upload-drop" for="file-input">
         <span class="upload-drop-icon">↥</span>
@@ -66,6 +74,28 @@
       </label>
       <p class="upload-status" id="upload-status"></p>
       <p class="field-warn" id="upload-error" hidden></p>
+    </div>
+
+    <div class="card" id="api-card" style="margin-top:16px">
+      <h3 class="card-title">Alternative: direkt von der Plexlog-API laden</h3>
+      <p class="card-sub">URL und Schlüssel bleiben nur in diesem Browser (lokal gespeichert) und gehen nirgendwo anders hin als direkt an die Plexlog-API.</p>
+      <label class="field">
+        API-Endpunkt-URL
+        <input type="text" id="in-api-url" placeholder="https://.../api/..." />
+      </label>
+      <label class="field">
+        Autorisierung (optional, z. B. „Bearer xxxxx" oder „X-API-Key: xxxxx")
+        <input type="password" id="in-api-auth" placeholder="Bearer ..." />
+      </label>
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <button type="button" class="table-toggle-btn" id="api-laden">Verbindung testen / Daten laden</button>
+      </div>
+      <p class="upload-status" id="api-status"></p>
+      <p class="field-warn" id="api-error" hidden></p>
+      <details style="margin-top:10px">
+        <summary>Rohe Antwort anzeigen (zum Prüfen, bevor die Auswertung angepasst wird)</summary>
+        <pre id="api-raw" style="white-space:pre-wrap; max-height:300px; overflow:auto; font-size:12px;"></pre>
+      </details>
     </div>
 
     <div class="card" id="manual-card" style="margin-top:16px" hidden>
@@ -114,13 +144,18 @@
 
       <div class="card">
         <div class="context-strip">
-          <div class="context-item"><span class="k">Jahresverbrauch</span><span class="v mono" id="ctx-verbrauch">–</span></div>
-          <div class="context-item"><span class="k">Jahresertrag (PV)</span><span class="v mono" id="ctx-ertrag">–</span></div>
+          <div class="context-item"><span class="k" id="ctx-verbrauch-label">Jahresverbrauch</span><span class="v mono" id="ctx-verbrauch">–</span></div>
+          <div class="context-item"><span class="k" id="ctx-ertrag-label">Jahresertrag (PV)</span><span class="v mono" id="ctx-ertrag">–</span></div>
           <div class="context-item"><span class="k">Erfasster Zeitraum</span><span class="v mono" id="ctx-zeitraum">–</span></div>
           <div class="context-item"><span class="k">Vorhandener Speicher erkannt</span><span class="v" id="ctx-speicher-erkannt">–</span></div>
         </div>
         <p class="result-note" id="note-hochrechnung" style="margin-top:10px"></p>
         <p class="result-note" id="note-manual-confidence" style="margin-top:10px" hidden></p>
+        <label class="field" style="margin-top:14px">
+          Vorhandenes Speichervolumen (kWh)
+          <input type="number" id="in-vorhanden" min="0" step="1" value="0" />
+          <span class="hint">Falls schon ein Speicher installiert ist, aber zu klein: wird von der empfohlenen Größe abgezogen, damit unten steht, wie viel zusätzliche Kapazität sich noch lohnt (z. B. für die Sommer-Überbrückung).</span>
+        </label>
       </div>
 
       <details class="assumptions" id="assumptions" style="margin-top:16px">
@@ -142,9 +177,9 @@
             <span class="hint">Meist der Strompreis, den Eigenverbrauch verdrängt.</span>
           </label>
           <label class="field">
-            Ladeleistung Netzladung MiSpeL (kW)
-            <input type="number" id="in-leistung" min="0" step="0.5" value="3" />
-            <span class="hint" id="leistung-hint">Maximale Ladeleistung aus dem Netz in günstigen Stunden. Wird nach dem Laden einer Datei automatisch aus der PV-Spitzenleistung vorgeschlagen (Wechselrichter-Schritte 15/20 kW, immer zwei Stück) — frei überschreibbar.</span>
+            Maximale Lade-/Entladeleistung Speicher (kW)
+            <input type="number" id="in-speicher-leistung" min="0" step="0.5" value="5" />
+            <span class="hint" id="speicher-leistung-hint">Technisches Limit des Speichers selbst (laut Datenblatt).</span>
           </label>
           <label class="field">
             Verfügbare günstige Ladestunden pro Jahr
@@ -173,7 +208,15 @@
               <button type="button" id="klima-nein" aria-pressed="true">Nein</button>
             </div>
           </div>
+          <div>
+            <div class="card-sub" style="margin-bottom:6px">Nur Sommer-Überbrückung (Mai–Sept.)?</div>
+            <div class="yesno" role="group" aria-label="Nur Sommer-Überbrückung berechnen?">
+              <button type="button" id="sommer-ja" aria-pressed="false">Ja</button>
+              <button type="button" id="sommer-nein" aria-pressed="true">Nein</button>
+            </div>
+          </div>
         </div>
+        <p class="result-note" id="sommer-hinweis" style="margin-top:10px" hidden>Berechnung beschränkt auf Mai–September. Alle €- und kWh-Angaben unten gelten für diesen Zeitraum, nicht fürs ganze Jahr.</p>
         <label class="field" style="margin-top:18px">
           Nachtanteil Grundlast (%)
           <input type="number" id="in-nachtanteil" min="0" max="100" step="1" value="30" />
@@ -240,7 +283,7 @@
       <div class="card chart-card" style="margin-top:16px">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
           <div>
-            <h3 class="card-title">Jährliche Ersparnis je Speichergröße</h3>
+            <h3 class="card-title" id="chart-titel">Jährliche Ersparnis je Speichergröße</h3>
             <p class="card-sub" style="margin-bottom:0">Geschätzte Ersparnis auf der Stromrechnung – keine Auszahlung. Punkt markiert die jeweils empfohlene Größe.</p>
           </div>
           <button class="table-toggle-btn" id="toggle-table" aria-expanded="false">Als Tabelle anzeigen</button>
